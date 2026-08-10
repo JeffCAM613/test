@@ -1,0 +1,49 @@
+# ============================================================================
+# KTP Anonymization
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# Live configuration - NEVER commit this.
+#
+# It is the file you fill in with a real SID and, if you choose to store them,
+# real passwords. Copy config/anonymization.template.ini to it, as the README
+# describes. The template is committed; the filled-in copy is not.
+# ---------------------------------------------------------------------------
+Anonymization_v4/config/anonymization.ini
+
+# ---------------------------------------------------------------------------
+# Runtime output. Spooled logs contain table and column names, row counts, and
+# whatever the database wrote to stderr - all instance-specific.
+# ---------------------------------------------------------------------------
+Anonymization_v4/op/logs/
+Anonymization_OP/logs/
+Anonymization_EPF/logs/
+*.log
+
+# ---------------------------------------------------------------------------
+# Generated against a specific instance. Regenerate with the tools rather than
+# committing one site's numbers:
+#   tools/generate_coverage_doc.sql   -> docs/03_coverage.md
+#   tools/analyze_flag_impact.sql     -> docs/09_flag_impact_measured.md
+#
+# 09_flag_impact_measured.md in particular carries per-column row counts, which
+# reveal business volumes.
+# ---------------------------------------------------------------------------
+Anonymization_v4/docs/09_flag_impact_measured.md
+
+# ---------------------------------------------------------------------------
+# Temporary files the batch wrapper generates
+# ---------------------------------------------------------------------------
+anon_inventory_*.sql
+load_inclusions_data.sql
+
+# ---------------------------------------------------------------------------
+# Editor / OS
+# ---------------------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/

@@ -1,0 +1,51 @@
+# ============================================================================
+# KTP/CTI Anonymization - Custom Inclusions File
+# ============================================================================
+# PURPOSE: Add future tables/columns to anonymization WITHOUT modifying SQL scripts
+# 
+# FORMAT: TABLE_NAME,COLUMN_NAME,TYPE,NOTES
+# - Lines starting with # are comments (ignored)
+# - Empty lines are ignored
+# - Column names are case-insensitive
+#
+# TYPE VALUES:
+# E = Entity only (prefix E_) - requires EntC=y in config.ini
+# P = Portfolio only (prefix P_) - requires FoldC=y in config.ini
+# C = Counterparty only (prefix T_) - requires TierC=y in config.ini
+# BA = Bank Account (prefix CB_) - requires CpteC=y in config.ini
+# EPC = Mixed Entity/Portfolio/Counterparty - requires ANY of EntC/FoldC/TierC=y
+# * = Free-text (set to NULL) - ALWAYS processed regardless of flags
+#
+# NOTES: Optional description (for documentation only, not used by script)
+#
+# ============================================================================
+# EXAMPLES (uncomment and modify as needed):
+# ============================================================================
+#
+# --- Single-type columns ---
+# new_audit_table,entity_code,E,Entity reference field - added for KTP v3.0 
+# new_audit_table,portfolio_ref,P,Portfolio reference field
+# new_audit_table,counterparty_id,C,Counterparty reference
+# new_audit_table,bank_account_num,BA,Bank account reference
+#
+# --- Mixed-type columns (can contain Entity OR Portfolio OR Counterparty) ---
+# new_ref_table,mixed_code,EPC,Could be any of E/P/C
+# legacy_mapping,source_ref,EPC,Source system reference
+#
+# --- Free-text fields (ALWAYS NULLed regardless of config flags) ---
+# new_user_table,description,*,Free text description
+# new_user_table,comments,*,User comments
+# new_contact_table,phone_number,*,Phone number - PII
+# new_contact_table,email_address,*,Email - PII
+# new_contact_table,full_name,*,Person name - PII
+#
+# --- Real-world example: Future KTP module ---
+# ktp_new_module_config,entity,E,New module entity ref
+# ktp_new_module_config,counterparty,EPC,New module cpty ref
+# ktp_new_module_config,account_id,BA,New module account
+# ktp_new_module_data,user_notes,*,Free text notes
+# ktp_new_module_data,audit_user,*,Username - PII
+#
+# ============================================================================
+# ADD YOUR CUSTOM INCLUSIONS BELOW THIS LINE:
+# ============================================================================

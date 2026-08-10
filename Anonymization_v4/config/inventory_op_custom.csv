@@ -1,0 +1,157 @@
+# ============================================================================
+# KTP OP Anonymization - Site-Specific Coverage Additions
+# ============================================================================
+# Extend anonymization coverage WITHOUT editing inventory_op.csv or any SQL.
+# Rows here are merged with inventory_op.csv at load time and treated
+# identically by the engine, the dry run, the verifier and the coverage doc.
+#
+# Keep additions here rather than in inventory_op.csv: this file survives an
+# upgrade of the shipped inventory.
+#
+# ----------------------------------------------------------------------------
+# FORMAT: table_name,column_name,rule,category,source,notes
+#
+#   Lines starting with # are ignored. Blank lines are ignored.
+#   Case-insensitive. Do NOT put commas in the notes field.
+#   Leave 'source' as CUSTOM so these rows are identifiable in reports.
+#
+# RULE      what happens to the column
+# --------  ------------------------------------------------------------------
+# CODE      Replace the identifier using the code mapping. Use for any column
+#           holding an entity / portfolio / counterparty / bank account code.
+# NULL_OUT  Set to NULL. Use for free text and PII. Always applied.
+# SELF_CODE Overwrite with the anonymized code of the row itself. Use when the
+#           column must stay populated (NOT NULL constraint or format check).
+#
+# CATEGORY  which codes may be substituted in
+# --------  ------------------------------------------------------------------
+# ANY           Column may hold entity / portfolio / counterparty codes.
+# BANK_ACCOUNT  Column references compte_banque.code. REQUIRED for bank account
+#               columns - without it a value that also exists as a tiers code
+#               will be rewritten with the wrong mapping.
+# NONE          Use with NULL_OUT.
+# ENTITY / PORTFOLIO / COUNTERPARTY
+#               Use with SELF_CODE to say which category owns the row.
+#
+# ----------------------------------------------------------------------------
+# HOW TO CHOOSE
+#
+#   Does the column hold a code that appears elsewhere as an entity, portfolio,
+#   counterparty or bank account?
+#     yes, and it is a bank account -> CODE,BANK_ACCOUNT
+#     yes, anything else            -> CODE,ANY
+#     no, it is free text or PII    -> NULL_OUT,NONE
+#     no, but it cannot be NULL     -> SELF_CODE,<owning category>
+#
+# When unsure between CODE,ANY and CODE,BANK_ACCOUNT: if the column name
+# contains compte / account / iban / rib, it is almost certainly BANK_ACCOUNT.
+#
+# ----------------------------------------------------------------------------
+# SAFETY
+#
+# A table or column that does not exist on this instance is reported as SKIPPED
+# and does not fail the run - so it is safe to list columns that only exist in
+# some KTP versions.
+#
+# ALWAYS run a dry run after editing this file:
+#     run_op_anonymization.bat /dryrun
+# It reports, per row, whether the object was found, whether generated codes fit
+# the column width, and how many rows would change.
+# ============================================================================
+
+table_name,column_name,rule,category,source,notes
+
+# ############################################################################
+# ############################################################################
+# ##                                                                        ##
+# ##   TRANSFERRED FROM inventory_op.csv ON 2026-08-10                      ##
+# ##                                                                        ##
+# ##   PENDING REVIEW WITH THE ORIGINAL DEVELOPER                           ##
+# ##   See docs/08_open_questions.md, item 1.                               ##
+# ##                                                                        ##
+# ############################################################################
+# ############################################################################
+#
+# WHAT THESE ARE
+#   The per-entity PII attribute columns. In the original package these were
+#   chosen through five free-form slots per category in config.ini:
+#
+#       Ent1=telephone   Ent2=fax   Ent3=email_adress   Ent4=nom_pp ...
+#
+#   Each slot held a COLUMN NAME to overwrite with that entity's anonymized
+#   code, or 'n' to skip it. They were a SITE CHOICE, not vendor behaviour -
+#   which is why they live here rather than in the shipped inventory.
+#
+# STATUS
+#   ACTIVE. Moving them changed their location and nothing else; the columns
+#   below are exactly what the old config.ini selected, so behaviour is
+#   unchanged from previous runs.
+#
+# HOW TO MAKE ONE OPTIONAL
+#   Comment out its line. That is the per-column control.
+#   To switch off a whole category at once, set the matching flag in
+#   anonymization.ini:
+#       ANONYMIZE_ENTITY_ATTRIBUTES=n
+#       ANONYMIZE_PORTFOLIO_ATTRIBUTES=n
+#       ANONYMIZE_COUNTERPARTY_ATTRIBUTES=n
+#       ANONYMIZE_BANK_ACCOUNT_ATTRIBUTES=n
+#
+# NOT MOVED
+#   tiers.adresse1-adresse5 stayed in inventory_op.csv. They were never one of
+#   the five slots - the vendor package always cleared them as part of the
+#   description flag, so they are vendor default rather than a site choice.
+# ----------------------------------------------------------------------------
+
+# --- ENTITY: contact details        (was Ent1=telephone Ent2=fax Ent3=email_adress Ent4=nom_pp Ent5=prenom_pp)
+tiers,telephone,SELF_CODE,ENTITY,CUSTOM,was Ent1
+tiers,fax,SELF_CODE,ENTITY,CUSTOM,was Ent2
+tiers,email_adress,SELF_CODE,ENTITY,CUSTOM,was Ent3 - vendor spelling not a typo
+tiers,nom_pp,SELF_CODE,ENTITY,CUSTOM,was Ent4 - surname of a natural person
+tiers,prenom_pp,SELF_CODE,ENTITY,CUSTOM,was Ent5 - given name of a natural person
+
+# --- PORTFOLIO: grouping and personal attributes   (was Fold1=groupe_1 Fold2=groupe_2 Fold3=groupe_3 Fold4=flag_pp Fold5=dpt_naissance)
+tiers,groupe_1,SELF_CODE,PORTFOLIO,CUSTOM,was Fold1
+tiers,groupe_2,SELF_CODE,PORTFOLIO,CUSTOM,was Fold2
+tiers,groupe_3,SELF_CODE,PORTFOLIO,CUSTOM,was Fold3
+tiers,flag_pp,SELF_CODE,PORTFOLIO,CUSTOM,was Fold4 - natural-person flag
+tiers,dpt_naissance,SELF_CODE,PORTFOLIO,CUSTOM,was Fold5 - department of birth
+
+# --- COUNTERPARTY: classification attributes       (was Tier1=sector Tier2=seniority Tier3=telex Tier4=type_interne Tier5=n)
+tiers,sector,SELF_CODE,COUNTERPARTY,CUSTOM,was Tier1
+tiers,seniority,SELF_CODE,COUNTERPARTY,CUSTOM,was Tier2
+tiers,telex,SELF_CODE,COUNTERPARTY,CUSTOM,was Tier3
+tiers,type_interne,SELF_CODE,COUNTERPARTY,CUSTOM,was Tier4
+# Tier5 was 'n' - no fifth column was selected
+
+# --- BANK ACCOUNT: grouping attributes             (was Cpte1=groupe_1 Cpte2=groupe_2 Cpte3=groupe_3 Cpte4=n Cpte5=n)
+compte_banque,groupe_1,SELF_CODE,BANK_ACCOUNT,CUSTOM,was Cpte1
+compte_banque,groupe_2,SELF_CODE,BANK_ACCOUNT,CUSTOM,was Cpte2
+compte_banque,groupe_3,SELF_CODE,BANK_ACCOUNT,CUSTOM,was Cpte3
+# Cpte4 and Cpte5 were 'n' - no fourth or fifth column was selected
+
+# ############################################################################
+# ##   END OF TRANSFERRED ROWS                                              ##
+# ############################################################################
+
+# ----------------------------------------------------------------------------
+# EXAMPLES - uncomment and adapt. Delete what you do not need.
+# ----------------------------------------------------------------------------
+
+# A new module with entity and account references plus a free-text note field:
+# ktp_new_module_config,entity,CODE,ANY,CUSTOM,New module entity reference
+# ktp_new_module_config,account_id,CODE,BANK_ACCOUNT,CUSTOM,New module account
+# ktp_new_module_data,user_notes,NULL_OUT,NONE,CUSTOM,Free text entered by users
+# ktp_new_module_data,audit_user,NULL_OUT,NONE,CUSTOM,Username - PII
+
+# A contact table:
+# site_contact,full_name,NULL_OUT,NONE,CUSTOM,
+# site_contact,email_address,NULL_OUT,NONE,CUSTOM,
+# site_contact,phone_number,NULL_OUT,NONE,CUSTOM,
+# site_contact,entity_code,CODE,ANY,CUSTOM,
+
+# A column that is NOT NULL and so cannot be nulled:
+# site_entity_ext,mandatory_label,SELF_CODE,ENTITY,CUSTOM,NOT NULL - cannot be nulled
+
+# ----------------------------------------------------------------------------
+# ADD YOUR ROWS BELOW THIS LINE
+# ----------------------------------------------------------------------------
