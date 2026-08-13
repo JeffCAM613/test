@@ -276,3 +276,83 @@ So the fault is in the **load plumbing**, not the inventory content.
 | 6 | Stage B baseline | ✅ captured |
 | 7 | Diagnose ORA-01756 on inventory load | ⏳ **in progress** |
 | 8 | Re-run B1/B2 once the inventory loads | ⏳ |
+
+---
+
+### Defect T4 — RESOLVED: cmd leaks substring-replacement text on undefined variables 🔴 BLOCKER
+
+**Root cause found from the generated file**, which the tester recovered. Rows with a note were
+correct; rows **without** one were not:
+
+```sql
+-- row with a note - correct
+... ,'CUSTOM','was Cpte1',577);
+
+-- row with an empty note - BROKEN, three quotes
+... ,'BASE',''=',1);
+```
+
+`''='` is an odd number of quotes, so the **first** `INSERT` raised `ORA-01756`. Roughly 500 of the
+579 rows have no note, so most of the file was malformed.
+
+**Cause:** this line, applied to every row:
+
+```bat
+set "NTS=!NTS:'=!"
+```
+
+When `NTS` is **undefined**, cmd does not perform the replacement — it emits the
+`search=replace` text as a literal. Confirmed by direct experiment on this platform:
+
+```
+[raw]         NTS=[]
+[after strip] NTS=['=]        <-- from an empty variable
+```
+
+So an empty notes field became the literal `'=`, which the template then wrapped in quotes as
+`''='`.
+
+**Why the analysis kept missing it:** every check was aimed at the *inventory*, and the inventory was
+never at fault. Both CSVs are clean ASCII with no quote characters in any data row, and a simulation
+of the tokenizer produced 579 perfectly balanced statements. The corruption was introduced *after*
+parsing, by the sanitising step itself. **The fix that mattered was keeping the generated file on
+failure** — one look at it identified the cause immediately.
+
+**Fix:** guard the replacement.
+
+```bat
+if defined NTS set "NTS=!NTS:'=!"
+```
+
+Verified on this platform: empty → `''`, value preserved when present, apostrophe still stripped.
+
+**Wider finding — this affects BOTH substring forms.** A follow-up experiment showed
+position-based substring leaks the same way:
+
+```
+!UNDEF:~0,1!   ->  ~0,1        (not empty)
+!UNDEF:x=y!    ->  x=y         (not empty)
+```
+
+An earlier note in this log claimed position substring was safe on undefined variables. **That was
+wrong.** Every `!var:...!` expansion in the batch file is now guarded with `if defined`, including
+the two `~0,1` uses that were safe only by accident of ordering.
+
+**Rule for this codebase:** never write `!var:...!` without `if defined var` in front of it, for
+either form.
+
+---
+
+### Actions (updated)
+
+| # | Action | Status |
+|---|---|---|
+| 1 | Rename `mode` → `run_mode` | ✅ |
+| 2 | Grant `atrace` SELECT on `code_map` `WITH GRANT OPTION` | ✅ |
+| 3 | Re-run A1 | ✅ PASS |
+| 4 | Remove aggregate-alias shadowing | ✅ |
+| 5 | Re-run A2 | ✅ PASS — both objects VALID |
+| 6 | Stage B baseline | ✅ captured |
+| 7 | Guard all `!var:...!` expansions with `if defined` | ✅ |
+| 8 | Re-run C1 dry run | ⏳ next |
+| 9 | Re-run B1/B2 once the inventory loads | ⏳ |

@@ -68,7 +68,7 @@ set "_LOAD="
 set /p "_LOAD=Load it? Anything missing is still asked for [Y/n]: "
 if not defined _LOAD set "_LOAD=y"
 echo.
-if /I "!_LOAD:~0,1!"=="y" set "USE_CONFIG=1"
+if defined _LOAD if /I "!_LOAD:~0,1!"=="y" set "USE_CONFIG=1"
 goto :config_decided
 
 :no_config_file
@@ -442,7 +442,7 @@ REM Normalise so later comparisons and the summary are consistent. The engine
 REM accepts y/yes/true/1 regardless; this is for display and for the
 REM "is the category on?" test below.
 set "_v=!%~1!"
-set "_v=!_v:~0,1!"
+if defined _v set "_v=!_v:~0,1!"
 if /I "!_v!"=="y" set "%~1=y"
 if /I "!_v!"=="t" set "%~1=y"
 if /I "!_v!"=="1" set "%~1=y"
@@ -489,7 +489,7 @@ set "%~1="
 set /p "%~1=      Anonymize these? [y]: "
 if not defined %~1 set "%~1=y"
 set "_v=!%~1!"
-set "_v=!_v:~0,1!"
+if defined _v set "_v=!_v:~0,1!"
 if /I "!_v!"=="y" (set "%~1=y") else (set "%~1=n")
 echo.
 exit /b 0
@@ -534,10 +534,20 @@ for /f "usebackq eol=# tokens=1-5* delims=," %%A in ("%CSV%") do (
     set "NTS=%%F"
     if /I not "!TBL!"=="table_name" (
         if not "!COL!"=="" if not "!RUL!"=="" if not "!CAT!"=="" (
-            REM Strip quotes so they cannot break the generated SQL.
-            set "NTS=!NTS:'=!"
-            set "TBL=!TBL:'=!"
-            set "COL=!COL:'=!"
+            REM Strip apostrophes so they cannot break the generated SQL.
+            REM
+            REM "if defined" is not optional here. cmd does NOT perform substring
+            REM replacement on an UNDEFINED variable - it leaks the search=replace
+            REM text through instead, so an unguarded  set "NTS=!NTS:'=!"  turns an
+            REM empty notes field into the literal  '=  . That produced
+            REM   ...,'BASE',''=',1);
+            REM for every row without a note: an odd number of quotes, and
+            REM ORA-01756 on the very first INSERT.
+            REM
+            REM Most rows have no note, so this hit ~500 of 579 statements.
+            if defined NTS set "NTS=!NTS:'=!"
+            if defined TBL set "TBL=!TBL:'=!"
+            if defined COL set "COL=!COL:'=!"
             set /a SEQ+=1
             >> "%INVENTORY_SQL%" echo INSERT INTO anon_meta.anon_inventory ^(table_name,column_name,rule,category,source,notes,seq^) VALUES ^(UPPER^('!TBL!'^),UPPER^('!COL!'^),UPPER^('!RUL!'^),UPPER^('!CAT!'^),'%SRC%','!NTS!',!SEQ!^);
         )
