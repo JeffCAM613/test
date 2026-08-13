@@ -283,7 +283,13 @@ sqlplus -L /nolog @"%SQL_DIR%\00_run_op_anonymization.sql" ^
     "!PARALLEL_DEGREE!" "!FAIL_ON_MISSING_OBJECT!" "!MIN_CODE_LENGTH!" "%INVENTORY_SQL%"
 
 set "RC=!ERRORLEVEL!"
-del "%INVENTORY_SQL%" 2>nul
+if !RC! EQU 0 (
+    del "%INVENTORY_SQL%" 2>nul
+) else (
+    echo.
+    echo The generated inventory file has been KEPT for inspection:
+    echo   %INVENTORY_SQL%
+)
 
 echo.
 echo ====================================================================

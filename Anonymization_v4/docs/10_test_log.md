@@ -190,3 +190,89 @@ undeclared local variables in any procedure.
 | 4 | Remove aggregate-alias shadowing in `apply_inventory` | ✅ done |
 | 5 | Re-run A2 — package body must compile `VALID` | ⏳ next |
 | 6 | Continue to Stage B (baseline capture) | ⏳ |
+
+---
+
+### A2 — package body compiles ✅
+
+After T3, both `ANON_ENGINE` PACKAGE and PACKAGE BODY report `VALID`, `all_errors` empty.
+
+### Stage B — baseline captured ✅
+
+| Category | Codes |
+|---|---:|
+| ENTITY | 76 |
+| PORTFOLIO | 32 |
+| COUNTERPARTY | 761 |
+| BANK_ACCOUNT | 2,016 |
+
+`op.tiers` 869 rows, `op.compte_banque` 2,016 rows. Sample values recorded locally by the tester
+(real client data — not reproduced here).
+
+`compte_banque` codes are 8 characters (`SDFFCCFA`); `tiers` codes are 4 (`REAL`, `SDME`). Both
+comfortably above the 1-character checkbox threshold and below what the target columns must hold, so
+neither the flag-column rule nor `MIN_CODE_LENGTH` should exclude anything real. Worth re-checking
+against preflight once the dry run gets that far.
+
+**B1/B2 reported 0 tables in scope** — expected. Those scripts read `anon_meta.anon_inventory`, which
+is only populated by a run. They were executed before the first dry run, so the inventory was empty.
+Re-run them after C1 succeeds to get the real numbers.
+
+---
+
+### Defect T4 — inventory load fails with ORA-01756 🔴 BLOCKER — under investigation
+
+```
+=== Coverage inventory ===
+ERROR:
+ORA-01756: quoted string not properly terminated
+```
+
+The batch reported `579 inventory items prepared`, so the CSV parse produced the expected count.
+The failure is in SQL*Plus, loading the generated INSERT file.
+
+**Ruled out by inspection:**
+
+- Both CSVs are pure ASCII with **no quote characters at all in data rows** (apostrophes appear only
+  in `#` comment lines, which `eol=#` skips).
+- Simulating the batch tokenizer exactly — `eol=#`, blank-line skip, `delims=,` with consecutive
+  delimiters collapsed, `tokens=1-5*` — produces 579 statements, every one with exactly 12 single
+  quotes. No odd counts, no unbalanced strings.
+- `DELETE FROM anon_meta.anon_inventory` is the only statement between the `=== Coverage inventory ===`
+  banner and the generated file, and it contains no quotes.
+
+So the fault is in the **load plumbing**, not the inventory content.
+
+**Changes made to isolate it:**
+
+1. **Removed one level of indirection.** The generated file was `@`-included from *inside*
+   `20_load_inventory.sql`, which had itself been `@@`-included by the orchestrator, with the path
+   arriving through a second `DEFINE` from `&1`. When that fails, the error names neither the file
+   nor the line. `20_load_inventory.sql` now only clears the table; the orchestrator runs the
+   generated file directly and `21_validate_inventory.sql` validates afterwards.
+
+2. **The resolved path is now echoed** before the load: `PROMPT Inventory file: &inventory_data`.
+   This also tests something never yet proven — that SQL\*Plus resolves **multi-digit positional
+   parameters**. Everything that has worked so far used `&1`–`&9`; the inventory path arrives as
+   `&22`. If `&22` were parsed as `&2` followed by a literal `2`, the path would come out as the SYS
+   password with `2` appended.
+
+3. **The generated file is kept when the run fails**, and its location printed, instead of being
+   deleted unconditionally. A failed run should leave its inputs behind.
+
+**Next:** re-run C1 and read the `Inventory file:` line, then the first lines of the kept file.
+
+---
+
+### Actions (updated)
+
+| # | Action | Status |
+|---|---|---|
+| 1 | Rename `mode` → `run_mode` | ✅ |
+| 2 | Grant `atrace` SELECT on `code_map` `WITH GRANT OPTION` | ✅ |
+| 3 | Re-run A1 | ✅ PASS |
+| 4 | Remove aggregate-alias shadowing | ✅ |
+| 5 | Re-run A2 | ✅ PASS — both objects VALID |
+| 6 | Stage B baseline | ✅ captured |
+| 7 | Diagnose ORA-01756 on inventory load | ⏳ **in progress** |
+| 8 | Re-run B1/B2 once the inventory loads | ⏳ |

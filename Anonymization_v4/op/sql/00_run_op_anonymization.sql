@@ -100,7 +100,20 @@ SET VERIFY OFF
 SET HEADING OFF
 
 @@30_install_engine.sql
-@@20_load_inventory.sql &inventory_data
+
+-- Inventory load, in three explicit steps.
+--
+-- The generated INSERT file is run HERE rather than being @-included from
+-- inside 20_load_inventory.sql. A nested @ inside an @-included script, with
+-- the path arriving through a second DEFINE, is one indirection too many: when
+-- it goes wrong the error names neither the file nor the line.
+--
+-- The path is echoed first so that a load failure says which file to look at.
+PROMPT
+PROMPT Inventory file: &inventory_data
+@@20_load_inventory.sql
+@&inventory_data
+@@21_validate_inventory.sql
 
 
 -- ============================================================================
