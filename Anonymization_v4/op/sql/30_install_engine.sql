@@ -340,7 +340,7 @@ CREATE OR REPLACE PACKAGE BODY op.anon_engine AS
    BEGIN
       SELECT anon_meta.seq_anon_run.NEXTVAL INTO g_run_id FROM dual;
 
-      INSERT INTO anon_meta.anon_run (run_id, mode, status, db_name, os_user, config_json)
+      INSERT INTO anon_meta.anon_run (run_id, run_mode, status, db_name, os_user, config_json)
       VALUES (g_run_id, g_mode, 'RUNNING',
               SYS_CONTEXT('USERENV', 'DB_NAME'),
               SYS_CONTEXT('USERENV', 'OS_USER'),

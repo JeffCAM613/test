@@ -123,7 +123,7 @@ inventory and refuses to start if any target is too narrow. v3 would have discov
 ## Run lifecycle and restartability
 
 ```
-anon_meta.anon_run       one row per run: run_id, mode (EXECUTE|DRYRUN), status, timestamps
+anon_meta.anon_run       one row per run: run_id, run_mode (EXECUTE|DRYRUN), status, timestamps
 anon_meta.anon_step_log  one row per inventory item per run: rows_affected, elapsed, status, error
 anon_meta.code_map       old_code → new_code, retained across runs
 ```

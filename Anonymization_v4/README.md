@@ -78,6 +78,7 @@ which is the recommended handling for passwords.
 | [docs/07_first_run_checklist.md](docs/07_first_run_checklist.md) | **Test checklist** — stages A to G for the first run |
 | [docs/08_open_questions.md](docs/08_open_questions.md) | Reversible decisions to confirm with the original developer |
 | [docs/09_flag_impact.md](docs/09_flag_impact.md) | Which columns each config flag covers and skips |
+| [docs/10_test_log.md](docs/10_test_log.md) | Record of every run against a real database |
 
 ---
 

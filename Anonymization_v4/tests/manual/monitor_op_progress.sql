@@ -19,7 +19,7 @@ SET FEEDBACK OFF
 SET HEADING ON
 
 COLUMN run_id     FORMAT 9999      HEADING 'RUN'
-COLUMN mode       FORMAT A8        HEADING 'MODE'
+COLUMN run_mode   FORMAT A8        HEADING 'MODE'
 COLUMN status     FORMAT A10       HEADING 'STATUS'
 COLUMN started    FORMAT A20       HEADING 'STARTED'
 COLUMN elapsed    FORMAT A12       HEADING 'ELAPSED'
@@ -36,7 +36,7 @@ PROMPT ====================================================================
 PROMPT  Current run
 PROMPT ====================================================================
 
-SELECT run_id, mode, status,
+SELECT run_id, run_mode, status,
        TO_CHAR(started_at, 'YYYY-MM-DD HH24:MI:SS') AS started,
        CASE
           WHEN finished_at IS NULL THEN

@@ -160,7 +160,7 @@ BEGIN
       SELECT TO_NUMBER(REGEXP_SUBSTR(config_json, '"min_code_length":(\d+)', 1, 1, NULL, 1))
         INTO v_min_len
         FROM anon_meta.anon_run
-       WHERE run_id = (SELECT MAX(run_id) FROM anon_meta.anon_run WHERE mode = 'EXECUTE');
+       WHERE run_id = (SELECT MAX(run_id) FROM anon_meta.anon_run WHERE run_mode = 'EXECUTE');
    EXCEPTION
       WHEN OTHERS THEN v_min_len := NULL;
    END;

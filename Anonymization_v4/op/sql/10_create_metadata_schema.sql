@@ -179,7 +179,7 @@ BEGIN
       EXECUTE IMMEDIATE q'[
          CREATE TABLE anon_meta.anon_run (
             run_id       NUMBER        NOT NULL,
-            mode         VARCHAR2(10)  NOT NULL,
+            run_mode     VARCHAR2(10)  NOT NULL,
             status       VARCHAR2(20)  NOT NULL,
             started_at   TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL,
             finished_at  TIMESTAMP,
@@ -189,7 +189,7 @@ BEGIN
             error_text   VARCHAR2(4000),
             CONSTRAINT pk_anon_run PRIMARY KEY (run_id)
                USING INDEX TABLESPACE &tbs_index,
-            CONSTRAINT ck_anon_run_mode   CHECK (mode IN ('EXECUTE','DRYRUN')),
+            CONSTRAINT ck_anon_run_mode   CHECK (run_mode IN ('EXECUTE','DRYRUN')),
             CONSTRAINT ck_anon_run_status CHECK (status IN ('RUNNING','COMPLETED','FAILED'))
          ) TABLESPACE &tbs_data ]';
       EXECUTE IMMEDIATE 'CREATE SEQUENCE anon_meta.seq_anon_run START WITH 1 INCREMENT BY 1 NOCACHE';
@@ -299,6 +299,15 @@ BEGIN
    END IF;
 END;
 /
+
+-- The view belongs to atrace but reads anon_meta.code_map, so atrace needs its
+-- own privilege on that table - a view is compiled with the OWNER's rights, not
+-- the creator's, so SYS creating it is not enough. WITH GRANT OPTION is needed
+-- too, because atrace then has to pass SELECT on the view down to op.
+--
+-- Without this the CREATE VIEW fails with ORA-00942, which reads as "the table
+-- does not exist" and is easy to misdiagnose as a missing object.
+GRANT SELECT ON anon_meta.code_map TO atrace WITH GRANT OPTION;
 
 CREATE OR REPLACE VIEW atrace.ref_tables_modif AS
 SELECT CASE category WHEN 'BANK_ACCOUNT' THEN 'compte_banque' ELSE 'tiers' END AS table_name,
