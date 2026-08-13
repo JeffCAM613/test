@@ -111,6 +111,22 @@ DECLARE
    END is_flag_column;
 
 
+   -- A NOT NULL free-text column cannot be emptied, so the engine skips it. That
+   -- is a real coverage gap and must stay visible - but it is not a failure of
+   -- the run, so it is reported as a warning rather than failing verification.
+   -- Without this a correct run could never pass on a schema that has one.
+   FUNCTION is_not_nullable(p_table IN VARCHAR2, p_column IN VARCHAR2) RETURN BOOLEAN IS
+      v_nullable VARCHAR2(1);
+   BEGIN
+      SELECT MAX(nullable) INTO v_nullable
+        FROM all_tab_columns
+       WHERE owner = 'OP'
+         AND table_name  = UPPER(p_table)
+         AND column_name = UPPER(p_column);
+      RETURN v_nullable = 'N';
+   END is_not_nullable;
+
+
    PROCEDURE record(
       p_part        IN VARCHAR2,
       p_check       IN VARCHAR2,
@@ -292,6 +308,19 @@ BEGIN
 
          IF v_bad = 0 THEN
             record('FREETEXT', v_obj, 'all NULL', NULL, 0, c_pass);
+
+         ELSIF is_not_nullable(r.table_name, r.column_name) THEN
+            -- The engine could not empty this column and said so at preflight.
+            -- Reporting it as FAIL would mean a correct run can never pass on
+            -- this schema, so it is a warning - but a loud one, because the
+            -- free text is genuinely still there.
+            record('FREETEXT', v_obj, 'all NULL', NULL, v_bad, c_warn,
+                   'column is NOT NULL so the run could not empty it - the free text '
+                || 'is still present. Change its rule to SELF_CODE in the inventory to '
+                || 'overwrite instead of empty, or accept the gap knowingly.');
+            say('  WARN  ' || RPAD(SUBSTR(v_obj, 1, 48), 50)
+                           || TO_CHAR(v_bad, 'FM999,999,999') || ' rows - NOT NULL, cannot be emptied');
+
          ELSE
             record('FREETEXT', v_obj, 'all NULL', NULL, v_bad, c_fail,
                    'free text or PII survived');

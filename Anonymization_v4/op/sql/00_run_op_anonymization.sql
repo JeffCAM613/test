@@ -94,6 +94,14 @@ PROMPT ====================================================================
 SET TERMOUT OFF
 CONNECT op/"&op_password"@&db_sid
 SET TERMOUT ON
+
+-- Assert the connection immediately. TERMOUT OFF hides a failed CONNECT, and
+-- SQL*Plus does not always treat one as a SQLERROR - so without this a bad
+-- connect surfaces much later as ORA-03114 on whatever statement happens to run
+-- next, naming the wrong culprit.
+SET HEADING OFF
+SELECT 'Connected as ' || USER || ' on ' || SYS_CONTEXT('USERENV', 'DB_NAME')
+       || ' (session ' || SYS_CONTEXT('USERENV', 'SID') || ')' AS connected FROM dual;
 SET SERVEROUTPUT ON SIZE UNLIMITED
 SET FEEDBACK OFF
 SET VERIFY OFF

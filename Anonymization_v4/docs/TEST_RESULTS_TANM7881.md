@@ -107,15 +107,21 @@ COUNTERPARTY 761
 BANK_ACCOUNT 2,016
 
 ====================================================================
-The 25 largest tables in the inventory
+The 25 largest tables in the inventory (top 5 shown)
 ====================================================================
+
+TABLE ROWS (approx) COLUMNS
+---------------------------------- ---------------- -------
+HISTO_COMPTA 3,702,147 4
+HISTO_REGLEMENT 3,346,056 13
+HISTO_MOUVEMENT 2,322,570 5
+HISTO_OPERATION 1,455,434 28
+HISTO_MOUV_SOLDE 830,814 1
 
 TABLES_IN_SCOPE COLUMNS_IN_SCOPE APPROX_ROWS_IN_SCOPE
 --------------- ---------------- --------------------
- 0 0
+ 167 579 115214614
 ```
-
-**Note:** Inventory shows 0 tables in scope — will be populated during dry run (C1).
 
 ### B2. What exists on this instance
 
@@ -128,16 +134,16 @@ Overall
 
  INVENTORY FOUND MISSING
 ---------- ---------- ----------
- 0 0 0
-
+ 579 432 147
 ====================================================================
-Tables entirely absent: (none)
-Columns absent: (none)
-Columns too narrow: (none) <-- GOOD
+Tables entirely absent: 6 (CM_CMS_EXCEPTIONS, CM_DEAL_DEAL,
+ CM_PAYT_PAYMENT, VAL_CPTYRATING, VUE_AFFILIE_COMPTE, VUE_AFFILIE_TIERS)
+Columns absent from existing tables: 79 (version differences)
+Columns too narrow: 4 (checkbox columns — correctly left alone)
 ====================================================================
 ```
 
-**Note:** Inventory not yet loaded. Will be verified during dry run.
+**Note:** 147 missing items are expected (tables/columns from newer versions not present on this instance).
 
 ### B3. Sample of real values (before anonymization)
 
@@ -179,43 +185,81 @@ Columns too narrow: (none) <-- GOOD
 
 ### C1. Dry run execution
 
-**Run 2 (after git pull):** ❌ FAIL — Exit code 1
+**Run 2 (after git pull for Issue #3):** ✓ PASS — Exit code 0
 
 ```
-Inventory file: C:\Users\u735031\AppData\Local\Temp\anon_inventory_13783.sql
-
 === Coverage inventory ===
-ERROR:
-ORA-01756: quoted string not properly terminated
+loaded ............ 579 items
+shipped ......... 562
+site-specific ... 17
 
-The generated inventory file has been KEPT for inspection:
- C:\Users\u735031\AppData\Local\Temp\anon_inventory_13783.sql
+NULL_OUT NONE 92
+CODE ANY 390
+CODE BANK_ACCOUNT 72
+DESCRIPTION ANY 2
+DESCRIPTION BANK_ACCOUNT 1
+SELF_CODE ANY 5
+SELF_CODE BANK_ACCOUNT 3
+SELF_CODE COUNTERPARTY 4
+SELF_CODE ENTITY 5
+SELF_CODE PORTFOLIO 5
 ```
-
-**Inventory file path:** ✓ Correct format (`C:\Users\u735031\AppData\Local\Temp\anon_inventory_13783.sql`)
-
-**First 5 lines of kept file:**
-```sql
-SET DEFINE OFF
-SET FEEDBACK OFF
-INSERT INTO anon_meta.anon_inventory (...) VALUES (UPPER('structure'),UPPER('code'),UPPER('CODE'),UPPER('ANY'),'BASE',''=',1);
-INSERT INTO anon_meta.anon_inventory (...) VALUES (UPPER('structure'),UPPER('pere'),UPPER('CODE'),UPPER('ANY'),'BASE',''=',2);
-INSERT INTO anon_meta.anon_inventory (...) VALUES (UPPER('tiers'),UPPER('code'),UPPER('CODE'),UPPER('ANY'),'BASE',''=',3);
-```
-
-**Root Cause Identified:** The `notes` column has `''='` instead of `''` (empty string).
-
-| Expected | Actual |
-|----------|--------|
-| `'BASE','',1` | `'BASE',''=',1` |
-
-This is a **batch file variable expansion issue** — something is injecting `=` into the empty string quotes during generation.
 
 ### C2. Dry run report analysis
 
-**Status:** ⛔ BLOCKED by C1 error
+**Result:** ✓ PASS
 
-The dry run failed before producing the preflight report.
+```
+Run id .............. 1
+Mode ................ DRYRUN (no changes will be made)
+Categories .......... ENTITY,PORTFOLIO,COUNTERPARTY,BANK_ACCOUNT
+Descriptions ........ ENTITY,PORTFOLIO,COUNTERPARTY,BANK_ACCOUNT
+PII attributes ...... ENTITY,PORTFOLIO,COUNTERPARTY,BANK_ACCOUNT
+Parallel degree ..... 4
+
+--- Preflight -------------------------------------------------
+CHECKBOX ventiler_corresp_bqe.tiers_entite (VARCHAR2(1)) - will be left alone
+CHECKBOX val_ssi_account.tiers_entite (VARCHAR2(1)) - will be left alone
+CHECKBOX val_ssi_corresp.tiers_entite (VARCHAR2(1)) - will be left alone
+NOT NULL histo_pricing_groupe.description (cannot be emptied)
+CHECKBOX tiers.flag_pp (VARCHAR2(1)) - will be left alone
+
+resolved .......... 427
+missing tables .... 68
+missing columns ... 79
+checkbox columns .. 4 (left alone)
+too narrow ........ 0 <-- PASS
+wrong type ........ 0 <-- PASS
+not nullable ...... 1
+
+==============================================================
+Run 1 summary (DRYRUN)
+==============================================================
+applied ........... 0
+no rows matched ... 0
+skipped ........... 304 (not present on this instance)
+disabled .......... 0 (excluded by configuration)
+errors ............ 0
+rows affected ..... 10,663,242
+step time ......... 20s
+==============================================================
+
+====================================================================
+ DRY RUN COMPLETE - no changes were made.
+ Re-run without /dryrun to execute.
+====================================================================
+```
+
+**Key Validations:**
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| Loaded items | 579 | 579 | ✓ PASS |
+| Shipped | 562 | 562 | ✓ PASS |
+| Site-specific | 17 | 17 | ✓ PASS |
+| checkbox columns | tiers.flag_pp minimum | 4 (incl. flag_pp) | ✓ PASS |
+| too narrow | 0 | 0 | ✓ PASS |
+| wrong type | 0 | 0 | ✓ PASS |
+| errors | 0 | 0 | ✓ PASS |
 
 ---
 
@@ -237,8 +281,8 @@ The dry run failed before producing the preflight report.
 |-------|--------|-------|
 | A - Install | ✓ PASS | A1 ✓, A2 ✓ (after fix), A3 ✓ |
 | B - Baseline | ✓ PASS | 869 tiers, 2016 compte_banque captured |
-| C - Dry Run | ❌ FAIL | ORA-01756: quoted string not properly terminated |
-| D - Execute | ⛔ BLOCKED | Requires Stage C |
+| C - Dry Run | ✓ PASS | 10.6M rows would change, 0 errors |
+| D - Execute | ⏳ READY | Awaiting approval |
 | E - Verify | ⏳ PENDING | |
 
 ---
@@ -262,7 +306,7 @@ The dry run failed before producing the preflight report.
 **Cause:** PL/SQL syntax issues in the engine package body 
 **Resolution:** Fixed in code update (git pull 2026-08-13)
 
-### Issue #3: Quoted String Not Properly Terminated (BLOCKER)
+### Issue #3: Quoted String Not Properly Terminated — RESOLVED
 
 **Location:** `op/run_op_anonymization.bat` (inventory SQL generator) 
 **Error:** `ORA-01756: quoted string not properly terminated` 
@@ -279,7 +323,7 @@ VALUES (...,'BASE',''=',1);
 VALUES (...,'BASE','',1);
 ```
 
-**Fix Required:** Fix the batch file's handling of empty strings when building INSERT statements
+**Resolution:** Fixed in code update (git pull 2026-08-13)
 
 ---
 

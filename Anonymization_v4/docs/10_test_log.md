@@ -356,3 +356,130 @@ either form.
 | 7 | Guard all `!var:...!` expansions with `if defined` | ✅ |
 | 8 | Re-run C1 dry run | ⏳ next |
 | 9 | Re-run B1/B2 once the inventory loads | ⏳ |
+
+---
+
+## Dry run — PASS
+
+```
+resolved .......... 427
+missing tables .... 68
+missing columns ... 79
+checkbox columns .. 4   (left alone)
+too narrow ........ 0
+wrong type ........ 0
+not nullable ...... 1
+errors ............ 0
+rows affected ..... 10,663,242   (would change)
+step time ......... 20s
+```
+
+579 loaded / 562 shipped / 17 site-specific — all three match. The rule and category breakdown
+matches the CSV exactly. 167 tables in scope, ~115M rows.
+
+The counts reconcile: 427 resolved + 68 missing-table rows + 79 missing-column rows + 4 checkbox
++ 1 not-nullable = 579. The 6 absent tables (`CM_DEAL_DEAL`, `CM_PAYT_PAYMENT`,
+`CM_CMS_EXCEPTIONS`, `VAL_CPTYRATING`, `VUE_AFFILIE_COMPTE`, `VUE_AFFILIE_TIERS`) account for the 68
+rows — `cm_deal_deal` alone holds 32 of them.
+
+---
+
+### Finding T5 — three inventory rows are misclassified 🟠 no action needed, but worth knowing
+
+Preflight flagged four checkbox columns. One was expected. **Three were not:**
+
+```
+CHECKBOX ventiler_corresp_bqe.tiers_entite  (VARCHAR2(1)) - will be left alone
+CHECKBOX val_ssi_account.tiers_entite       (VARCHAR2(1)) - will be left alone
+CHECKBOX val_ssi_corresp.tiers_entite       (VARCHAR2(1)) - will be left alone
+CHECKBOX tiers.flag_pp                      (VARCHAR2(1)) - will be left alone
+```
+
+`tiers.flag_pp` is the known case — a natural-person checkbox that the old `config.ini` listed as
+an anonymizable attribute via `Fold4`.
+
+The three `tiers_entite` columns are more interesting. They are declared `CODE` / `ANY` in the
+inventory, inherited from v3's `merge_codes` calls — meaning v3 treated them as **references to an
+entity or counterparty code**. But they are `VARCHAR2(1)` on this instance, and codes here are 4
+characters (`REAL`, `SDME`) or 8 (`SDFFCCFA`). **A one-character column cannot hold any of them.**
+
+The name reads differently in that light: `tiers_entite` is almost certainly a **discriminator** —
+`'T'` or `'E'`, saying which kind of thing the neighbouring column refers to — not a reference
+itself.
+
+**No action taken.** The engine already skips them, so behaviour is correct either way, and the
+checkbox rule caught the misclassification without needing the inventory to be right. Recorded for
+the developer review as evidence that the width rule earns its place: it found three rows that
+sixteen years of the previous tool had been feeding into `merge_codes`.
+
+If a code of one character had ever existed, v3 would have overwritten these discriminators
+schema-wide.
+
+---
+
+### Finding T6 — one free-text column cannot be emptied 🟠 verifier adjusted
+
+```
+NOT NULL histo_pricing_groupe.description (cannot be emptied)
+```
+
+`histo_pricing_groupe.description` is `NULL_OUT` in the inventory but `NOT NULL` on this schema. The
+engine skips it rather than failing the run with `ORA-01407`, as designed.
+
+**But the verifier would have failed on it**, because PART 2 asserts every `NULL_OUT` column is
+entirely empty. A correct run would have reported `FAIL` — which is both wrong and the kind of thing
+that trains people to ignore verification output.
+
+**Fixed:** PART 2 now detects `NOT NULL` columns and reports them as `WARN` with the reason and the
+remedy, consistent with how checkbox columns are handled. The gap stays visible; it no longer fails
+a run that behaved correctly.
+
+**The gap is real:** the free text in that column is still there. Options are to change its rule to
+`SELF_CODE` so it is overwritten rather than emptied, or accept it knowingly. See
+[08_open_questions.md](08_open_questions.md) item 7.
+
+---
+
+### Defect T7 — first EXECUTE attempt lost its connection 🔵 environmental, re-run
+
+```
+Inventory file: C:\Users\...\anon_inventory_5830.sql
+=== Coverage inventory ===
+ERROR:
+ORA-03114: not connected to ORACLE
+```
+
+**Not a code defect.** `ORA-03114` means the session was gone. The script had already connected as
+SYS, created the metadata schema, reconnected as OP and compiled the package (`No errors.` twice) —
+all of which require a live session. It then died on the first statement afterwards.
+
+**Nothing was changed.** The failure came before the inventory load, which is before `start_run` and
+long before any DML. No run row, no mapping change, no data touched.
+
+Usual causes: the server process crashed, the session was killed, a profile idle limit expired, or
+the network dropped. Worth checking the alert log around the timestamp for `ORA-00600` / `ORA-07445`
+or a shutdown.
+
+**Change made:** the orchestrator now asserts its connection immediately after connecting as OP:
+
+```sql
+SELECT 'Connected as ' || USER || ' on ' || ... FROM dual;
+```
+
+`SET TERMOUT OFF` around the `CONNECT` hides a failed logon, and SQL*Plus does not reliably treat one
+as a `SQLERROR` — so without this a bad connect surfaces later as `ORA-03114` on whatever statement
+runs next, naming the wrong culprit. Now the run states which user and instance it is on before
+doing anything.
+
+---
+
+### Actions (updated)
+
+| # | Action | Status |
+|---|---|---|
+| 1–7 | T1–T4 fixes | ✅ |
+| 8 | Dry run C1/C2 | ✅ **PASS** — 0 errors, 10.6M rows would change |
+| 9 | Verifier: treat NOT NULL free-text as WARN not FAIL | ✅ |
+| 10 | Orchestrator: assert connection after connecting as OP | ✅ |
+| 11 | Re-run Stage D (EXECUTE) after the ORA-03114 drop | ⏳ next |
+| 12 | Stage E verify | ⏳ |
