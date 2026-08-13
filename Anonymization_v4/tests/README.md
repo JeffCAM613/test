@@ -24,6 +24,7 @@ scripts, and it was not possible to tell by looking which ones a run would execu
 | `manual/row_counts.sql` | Row counts for the main anonymization targets. Read-only. Useful for estimating runtime. |
 | `manual/monitor_op_progress.sql` | Live progress of a run in flight, read from `anon_meta.anon_step_log`. Run from a second session. |
 | `manual/inspect_code_map.sql` | Sample the generated mapping; check category counts and look for anomalies. Read-only. |
+| `manual/check_locks.sql` | Who is holding the `anon_meta` tables. Run as SYS when a run stalls or fails at the inventory reload. Read-only. |
 
 ## Ground rules
 

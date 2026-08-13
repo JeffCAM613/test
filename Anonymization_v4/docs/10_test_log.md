@@ -483,3 +483,65 @@ doing anything.
 | 10 | Orchestrator: assert connection after connecting as OP | ✅ |
 | 11 | Re-run Stage D (EXECUTE) after the ORA-03114 drop | ⏳ next |
 | 12 | Stage E verify | ⏳ |
+
+---
+
+### Defect T7 (revised) — ORA-03114 at the inventory reload 🔵 still open
+
+Failed identically **after an instance restart**, at exactly the same point:
+
+```
+Connected as OP on TANM7881 (session 869)
+No errors.
+No errors.
+Inventory file: C:\Users\...\anon_inventory_13729.sql
+=== Coverage inventory ===
+ERROR:
+ORA-03114: not connected to ORACLE
+```
+
+The connection assertion added for the previous attempt worked — the run confirms it is OP on
+TANM7881, session 869 — so the session was alive after connecting and stayed alive long enough to
+compile the package. It dies on the first server round trip afterwards.
+
+**Locks were found on `ANON_META.ANON_INVENTORY`** (sessions 381 and 869, both `OP`, Row-X). Session
+869 is the failing run's own session, identified by the new assertion.
+
+**Two facts argue against locks being the root cause:**
+
+1. **Sessions do not survive an instance restart.** The restart cleared every session and every
+   lock, and the very next run failed identically. On that attempt there was no pre-existing holder.
+   The locks found afterwards were left *by* the failed run, not encountered *by* it.
+2. **A blocked DELETE hangs; it does not raise ORA-03114.** Oracle DML has no default lock timeout,
+   so a row-lock conflict makes the statement wait indefinitely. Something would have had to kill
+   the session mid-wait to turn that into ORA-03114.
+
+So locks are a real problem worth defending against, but most likely a symptom.
+
+**Defences added regardless** — they turn a hang into a named error either way:
+
+- `20_load_inventory.sql` now takes the table lock explicitly with `LOCK TABLE … IN EXCLUSIVE MODE
+  WAIT 10` before the DELETE. On `ORA-00054` it names the holding session and the exact
+  `ALTER SYSTEM KILL SESSION` needed. A run can no longer hang silently on this table.
+- `tests/manual/check_locks.sql` reports holders, idle times, ready-to-paste kill statements, all OP
+  sessions, and any blocking chain in the instance.
+
+**Still to determine.** The decisive test is the DELETE on its own, in a fresh session:
+
+```sql
+SET TIMING ON
+DELETE FROM anon_meta.anon_inventory;
+COMMIT;
+```
+
+- completes instantly → not a lock; the fault is in the script context around the package compile
+- hangs → lock contention confirmed
+- ORA-03114 → the session is dying for an unrelated reason; check the alert log for `ORA-00600`,
+  `ORA-07445`, `ORA-04030` around the failure time
+
+```sql
+SELECT name, value FROM v$diag_info WHERE name IN ('Diag Trace','Diag Alert');
+```
+
+**Note for the record:** the earlier troubleshooting summary stated "sessions survive restart". They
+do not. That line should not be carried into any runbook.
