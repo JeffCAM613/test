@@ -13,7 +13,7 @@ v4 replaces all three with **one declaration read by all consumers**.
 config/inventory_op.csv          ← shipped coverage
 config/inventory_op_custom.csv   ← site-specific additions
                 │
-                │  20_load_inventory.sql
+                │  21_validate_inventory.sql
                 ▼
       anon_meta.anon_inventory   ← the single source of truth
                 │

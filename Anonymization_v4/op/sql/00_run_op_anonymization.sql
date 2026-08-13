@@ -109,17 +109,18 @@ SET HEADING OFF
 
 @@30_install_engine.sql
 
--- Inventory load, in three explicit steps.
+-- Inventory load.
 --
--- The generated INSERT file is run HERE rather than being @-included from
--- inside 20_load_inventory.sql. A nested @ inside an @-included script, with
--- the path arriving through a second DEFINE, is one indirection too many: when
--- it goes wrong the error names neither the file nor the line.
+-- The table was cleared by 10_create_metadata_schema.sql as SYS, using TRUNCATE
+-- rather than a DELETE here as OP - see the comment there for why.
+--
+-- The generated INSERT file is run directly rather than @-included from inside
+-- another @-included script: a nested @ with the path arriving through a second
+-- DEFINE names neither the file nor the line when it fails.
 --
 -- The path is echoed first so that a load failure says which file to look at.
 PROMPT
 PROMPT Inventory file: &inventory_data
-@@20_load_inventory.sql
 @&inventory_data
 @@21_validate_inventory.sql
 

@@ -167,6 +167,49 @@ END;
 /
 
 -- ----------------------------------------------------------------------------
+-- Clear the inventory, ready for the generated INSERT file to repopulate it.
+--
+-- TRUNCATE, as SYS, here - deliberately, rather than DELETE as OP later.
+--
+-- DELETE takes a row lock per row, generates undo, and has no timeout: if
+-- anything holds the table the statement waits forever, the run looks hung, and
+-- if that session is then killed the client reports ORA-03114, which reads as a
+-- network fault. On TANM7881 a 0-row DELETE succeeded and every 579-row DELETE
+-- killed the session.
+--
+-- TRUNCATE is DDL: instant, no undo, no row locks, and it resets the table and
+-- its index. If the table is already held it fails immediately with ORA-00054
+-- naming the problem rather than hanging.
+--
+-- Nothing is lost. The inventory is rebuilt from the CSVs on every run; it is
+-- a cache of the CSVs, not a record of anything.
+-- ----------------------------------------------------------------------------
+DECLARE
+   v_rows NUMBER;
+BEGIN
+   EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM anon_meta.anon_inventory' INTO v_rows;
+
+   IF v_rows > 0 THEN
+      EXECUTE IMMEDIATE 'TRUNCATE TABLE anon_meta.anon_inventory';
+      DBMS_OUTPUT.PUT_LINE('  cleared anon_meta.anon_inventory (' || v_rows || ' rows)');
+   ELSE
+      DBMS_OUTPUT.PUT_LINE('  anon_meta.anon_inventory already empty');
+   END IF;
+
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE = -54 THEN         -- ORA-00054: resource busy
+         RAISE_APPLICATION_ERROR(-20023,
+            'anon_meta.anon_inventory is held by another session and cannot be cleared. '
+         || 'Nothing has been changed. Find the holder with '
+         || 'tests/manual/check_locks.sql as SYS, then re-run.');
+      ELSE
+         RAISE;
+      END IF;
+END;
+/
+
+-- ----------------------------------------------------------------------------
 -- anon_run - one row per run.
 -- ----------------------------------------------------------------------------
 DECLARE
