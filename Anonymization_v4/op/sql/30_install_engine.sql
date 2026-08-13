@@ -1015,8 +1015,14 @@ CREATE OR REPLACE PACKAGE BODY op.anon_engine AS
       -- 3. DESCRIPTION and SELF_CODE last: they read the code column, which
       --    only holds its new value once step 2 has run.
 
+      -- ORDER BY MIN(seq) keeps the inventory's own order, so the sequence of
+      -- work matches the CSV and the log reads in the same order as the file.
+      --
+      -- MIN(seq) is deliberately NOT given an alias of "seq": an alias with the
+      -- same name as the column shadows it in ORDER BY, which turns MIN(seq)
+      -- into MIN(MIN(seq)) and fails with ORA-00935.
       say('  --- Free text and PII -----------------------------------------');
-      FOR t IN (SELECT table_name, MIN(seq) AS seq
+      FOR t IN (SELECT table_name
                   FROM anon_meta.anon_inventory
                  WHERE rule = 'NULL_OUT'
                  GROUP BY table_name
@@ -1035,7 +1041,7 @@ CREATE OR REPLACE PACKAGE BODY op.anon_engine AS
       say('');
 
       say('  --- Labels and entity attributes ------------------------------');
-      FOR g IN (SELECT table_name, category, rule, MIN(seq) AS seq
+      FOR g IN (SELECT table_name, category, rule
                   FROM anon_meta.anon_inventory
                  WHERE rule IN ('DESCRIPTION', 'SELF_CODE')
                  GROUP BY table_name, category, rule

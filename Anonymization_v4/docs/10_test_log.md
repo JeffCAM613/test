@@ -129,3 +129,64 @@ Worth recording, because they were untested assumptions until this run:
 
 Both fixes are safe to apply to the partially-created schema — the script keeps what exists and
 creates only what is missing.
+
+---
+
+### Defect T3 — aggregate alias shadowed its own column 🔴 BLOCKER — fixed
+
+```
+931/17  PL/SQL: SQL Statement ignored
+935/27  PL/SQL: ORA-00935: group function is nested too deeply
+936/10  PL/SQL: Statement ignored
+936/25  PLS-00364: loop index variable 'T' use is invalid
+950/17  PL/SQL: SQL Statement ignored
+954/27  PL/SQL: ORA-00935: group function is nested too deeply
+955/10  PL/SQL: Statement ignored
+955/26  PLS-00364: loop index variable 'G' use is invalid
+```
+
+**Where:** `op/sql/30_install_engine.sql`, both grouped cursor loops in `apply_inventory`.
+
+**Cause:** the query read
+
+```sql
+SELECT table_name, MIN(seq) AS seq
+  FROM anon_meta.anon_inventory
+ GROUP BY table_name
+ ORDER BY MIN(seq)          -- <-- "seq" here resolves to the ALIAS
+```
+
+In `ORDER BY`, Oracle resolves an unqualified name to the **select-list alias** before the base
+column. The alias `seq` *is* `MIN(seq)`, so `ORDER BY MIN(seq)` became `ORDER BY MIN(MIN(seq))` —
+hence `ORA-00935: group function is nested too deeply`.
+
+`PLS-00364` on loop variables `T` and `G` is pure cascade: the cursor query failed to parse, so the
+loop record had no type and every `t.table_name` reference was invalid. **Eight reported errors, two
+root causes — one per loop.**
+
+**Fix:** dropped the aliased aggregate from the select list entirely. It was never read — the loops
+only use `table_name`, `category` and `rule`. `ORDER BY MIN(seq)` on a `GROUP BY` query is valid
+without the column being selected, and with no alias in scope the name resolves to the base column.
+
+The rule is now stated in a comment above the loop, since it is easy to reintroduce.
+
+**Audit done as a result:** swept every SQL file for `AGG(x) AS x` shadowing and for aggregates in
+`ORDER BY`. The only other one is `monitor_op_progress.sql:66` (`ORDER BY MIN(logged_at)`), whose
+select list has no colliding alias — correct as written.
+
+Also ran a package-wide declaration audit while the compiler was unavailable: all 15 package globals
+declared, all spec constants declared, all 23 internal procedures and functions defined, and no
+undeclared local variables in any procedure.
+
+---
+
+### Actions (updated)
+
+| # | Action | Status |
+|---|---|---|
+| 1 | Rename `mode` → `run_mode` in 4 files | ✅ done |
+| 2 | Grant `atrace` SELECT on `code_map` `WITH GRANT OPTION` | ✅ done |
+| 3 | Re-run A1 | ✅ **PASS** — `created anon_meta.anon_run`, all 6 tables present |
+| 4 | Remove aggregate-alias shadowing in `apply_inventory` | ✅ done |
+| 5 | Re-run A2 — package body must compile `VALID` | ⏳ next |
+| 6 | Continue to Stage B (baseline capture) | ⏳ |
