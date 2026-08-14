@@ -545,3 +545,127 @@ SELECT name, value FROM v$diag_info WHERE name IN ('Diag Trace','Diag Alert');
 
 **Note for the record:** the earlier troubleshooting summary stated "sessions survive restart". They
 do not. That line should not be carried into any runbook.
+
+---
+
+## Stage D — EXECUTE, PASS (run 2)
+
+Run from a Windows server **on the same network as the database**. No errors.
+
+| | |
+|---|---|
+| Mappings | 2,885 — entity 76, portfolio 32, counterparty 761, account 2,016 |
+| Applied | 156 statements, 44,460,155 rows |
+| Errors | 0 |
+| Runtime | 1,757s (~29 min), inside the 20–40 min estimate |
+| Triggers | 45 disabled → 45 re-enabled |
+
+Mapping counts **match the Stage B baseline exactly** — checklist item C5, the check that proves the
+four mapping source queries select the right populations.
+
+### Defect T7 — RESOLVED: the network, not the code
+
+Every `ORA-03114` was a dropped client connection between the workstation and the database. Same
+code, same instance, same credentials, run from a host on the same network: clean.
+
+Three hypotheses were pursued and discarded first — zombie locks, the 579-row DELETE, session
+exhaustion. The through-line that should have been followed sooner: **manual execution of the same
+statements succeeded, and the reported failure point moved between runs.** Both were visible early
+and both point outside the code. `ORA-03114` ("not connected") rather than `ORA-03113`
+("end-of-file") was the specific tell — the client had already lost the connection before the
+statement that reported it.
+
+Nothing in the code fixed this. The `TRUNCATE` and lock-timeout changes are worth keeping on their
+own merits, but neither addressed the cause.
+
+---
+
+## Stage E — verification
+
+`verify_op_coverage.sql`: **432 passed, 0 failed.** 462 identifier columns with no residual
+originals, 92 free-text columns empty, 25 labels consistent. Row counts unchanged (869 / 2,016).
+`flag_pp` untouched. 45 triggers enabled.
+
+432 checked + 147 absent = 579 — every inventory row accounted for.
+
+---
+
+### Defect T8 — the verifier shared the engine's blind spot, and a real leak survived
+
+**Found by an independent check, after the standard verification reported PASS.**
+
+```
+param_cpta_reg_gen.compte_ana     5
+columns with residual originals: 1
+```
+
+Five rows still held **original client identifiers**.
+
+**Cause.** The column is declared `CODE` / `BANK_ACCOUNT`, inherited from v3's
+`merge_codes('param_cpta_reg_gen','compte_ana', p_entity_type => 'COMPTE')`. The engine therefore
+substituted only bank-account codes. Those five values belong to a different category, so they were
+never touched.
+
+`compte_ana` is *compte analytique* — an analytical / cost-centre account, not a bank account. v3
+classified it from the word `compte` in the name.
+
+**Why verification missed it.** PART 1 restricted its residual search **the same way the engine
+did** — bank-account codes only, for a `BANK_ACCOUNT` column. Engine and verifier shared one wrong
+assumption, so both agreed and both were wrong. A verifier that re-applies the engine's assumptions
+cannot detect an assumption that is itself wrong.
+
+This contradicted the principle stated in the script's own header — that the check tests the
+*outcome*, not the method — and it took an independent query to expose it.
+
+**Fixes:**
+
+1. **PART 1 now searches the full mapping** for every `CODE` column whatever its declared category.
+   Any original left anywhere is a leak. A failing `BANK_ACCOUNT` column names the likely cause and
+   the remedy.
+2. **`param_cpta_reg_gen.compte_ana` corrected to `CODE,ANY`** in `inventory_op_custom.csv`.
+3. **The loader now supports overrides.** `anon_inventory` has a primary key on
+   `(table_name, column_name)`, so a second row for the same column previously raised `ORA-00001`
+   instead of taking effect. Custom rows now emit a `DELETE` first, so a wrong classification in the
+   shipped inventory can be corrected without editing it.
+
+**Why `ANY`:** `code_map_any` contains every category, so genuine bank account references still
+resolve to `CB_`. Only the six cross-category collisions resolve differently.
+
+---
+
+### The six cross-category collisions — reviewed, correct
+
+```
+BNPSP      counterparty T_0000116   account CB_0000088   ANY columns got T_0000116
+ENCON      entity       E_0000008   account CB_0000267   ANY columns got E_0000008
+FACTOCGED  entity       E_0000012   account CB_0000285   ANY columns got E_0000012
+FACTOSIDF  entity       E_0000017   account CB_0000293   ANY columns got E_0000017
+FACTOSNE   entity       E_0000018   account CB_0000298   ANY columns got E_0000018
+SNDS       entity       E_0000063   account CB_0001425   ANY columns got E_0000063
+```
+
+Bank accounts named after their owner. An entity and its account are different objects in different
+tables, so they anonymize differently — the collision guard working as intended, and the same
+behaviour v3 had.
+
+Resolution follows the documented priority: entity → portfolio → counterparty → account. Account
+always loses in an `ANY` column, matching every row above.
+
+**Blast radius is exactly bounded:** an `ANY`-classified column referencing a bank account and
+holding one of these six codes. Every other code in the 2,885-entry mapping resolves identically
+everywhere, guaranteed by the primary key on `code_map_any` and the unique index on
+`code_map.new_code`.
+
+---
+
+### Actions
+
+| # | Action | Status |
+|---|---|---|
+| 1–10 | T1–T7 | ✅ |
+| 11 | Stage D EXECUTE | ✅ PASS — 44.5M rows, 0 errors, 29 min |
+| 12 | Stage E verify | ✅ PASS — then T8 found by an independent check |
+| 13 | Verifier PART 1 searches the full mapping | ✅ |
+| 14 | `compte_ana` corrected to `CODE,ANY` | ✅ |
+| 15 | Loader supports custom-overrides-shipped | ✅ |
+| 16 | Re-run to clear the 5 residual rows, then re-verify | ⏳ next |

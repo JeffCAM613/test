@@ -549,6 +549,13 @@ for /f "usebackq eol=# tokens=1-5* delims=," %%A in ("%CSV%") do (
             if defined TBL set "TBL=!TBL:'=!"
             if defined COL set "COL=!COL:'=!"
             set /a SEQ+=1
+            REM A site-specific row OVERRIDES the shipped one for the same
+            REM column. anon_inventory has a primary key on (table_name,
+            REM column_name), so without this delete the second INSERT raises
+            REM ORA-00001 instead of taking effect. The custom file is parsed
+            REM second, so its row wins - which is how a wrong category in the
+            REM shipped inventory gets corrected without editing it.
+            if /I "%SRC%"=="CUSTOM" >> "%INVENTORY_SQL%" echo DELETE FROM anon_meta.anon_inventory WHERE table_name=UPPER^('!TBL!'^) AND column_name=UPPER^('!COL!'^);
             >> "%INVENTORY_SQL%" echo INSERT INTO anon_meta.anon_inventory ^(table_name,column_name,rule,category,source,notes,seq^) VALUES ^(UPPER^('!TBL!'^),UPPER^('!COL!'^),UPPER^('!RUL!'^),UPPER^('!CAT!'^),'%SRC%','!NTS!',!SEQ!^);
         )
     )

@@ -1,0 +1,599 @@
+====================================================================
+KTP OP Anonymization (v4)
+====================================================================
+
+=== Metadata schema (anon_meta) ===
+user anon_meta already exists - kept
+anon_meta.code_map already exists - PRESERVED
+anon_meta.code_map_any already exists
+anon_meta.anon_inventory already exists
+anon_meta.anon_inventory already empty
+anon_meta.anon_run already exists
+anon_meta.anon_step_log already exists
+anon_meta.verify_result already exists
+=== Metadata schema ready ===
+
+Connected as OP on TANM7881 (session 868)
+No errors.
+No errors.
+
+Inventory file: C:\Users\u735031\AppData\Local\Temp\anon_inventory_7066.sql
+loaded ............ 579 items
+shipped ......... 562
+site-specific ... 17
+
+NULL_OUT       NONE              92
+CODE           ANY              390
+CODE           BANK_ACCOUNT      72
+DESCRIPTION    ANY                2
+DESCRIPTION    BANK_ACCOUNT       1
+SELF_CODE      ANY                5
+SELF_CODE      BANK_ACCOUNT       3
+SELF_CODE      COUNTERPARTY       4
+SELF_CODE      ENTITY             5
+SELF_CODE      PORTFOLIO          5
+
+Run id .............. 2
+Mode ................ EXECUTE
+Categories .......... ENTITY,PORTFOLIO,COUNTERPARTY,BANK_ACCOUNT
+Descriptions ........ ENTITY,PORTFOLIO,COUNTERPARTY,BANK_ACCOUNT
+PII attributes ...... ENTITY,PORTFOLIO,COUNTERPARTY,BANK_ACCOUNT
+Parallel degree ..... 4
+--- Preflight -------------------------------------------------
+CHECKBOX    ventiler_corresp_bqe.tiers_entite  (VARCHAR2(1)) - will be left alone
+CHECKBOX    val_ssi_account.tiers_entite  (VARCHAR2(1)) - will be left alone
+CHECKBOX    val_ssi_corresp.tiers_entite  (VARCHAR2(1)) - will be left alone
+NOT NULL    histo_pricing_groupe.description  (cannot be emptied)
+CHECKBOX    tiers.flag_pp  (VARCHAR2(1)) - will be left alone
+resolved .......... 427
+missing tables .... 68
+missing columns ... 79
+checkbox columns .. 4   (left alone)
+too narrow ........ 0
+wrong type ........ 0
+not nullable ...... 1
+1 free-text column(s) are NOT NULL and will be left as they
+are. Change their rule to SELF_CODE in the inventory if the value
+must be overwritten rather than emptied.
+
+------------------------------------------------------------------- PROMPT  Live progress is written to anon_meta.anon_step_log as it happens.
+The output below appears only once each phase finishes, so to watch
+a long run open a second session and use:
+tests\manual\monitor_op_progress.sql
+-------------------------------------------------------------------
+triggers disabled: 45
+--- Identifier mapping ----------------------------------------
+ENTITY                                                OK        76 rows
+PORTFOLIO                                             OK        32 rows
+COUNTERPARTY                                          OK        761 rows
+BANK_ACCOUNT                                          OK        2,016 rows
+total                                                 2,885 mappings
+--- Free text and PII -----------------------------------------
+histo_reglement.[description,groupe_1,groupe_2,group  OK        3,220,412 rows
+histo_operation.[description,groupe_1,groupe_2,group  OK        1,399,723 rows
+histo_flux.[description,groupe_1,groupe_2,groupe_3]   NOOP      no rows matched
+histo_livraison.[description,groupe_1,groupe_2,group  NOOP      no rows matched
+histo_mouvement.[description,libelle]                 OK        2,313,240 rows
+histo_mouvement_intraday.[description,libelle]        OK        2,586 rows
+histo_compta.[description]                            OK        3,724,046 rows
+histo_compta_man.[description]                        NOOP      no rows matched
+histo_facture.[description]                           NOOP      no rows matched
+histo_matiere.[description]                           NOOP      no rows matched
+histo_parapheur.[description]                         NOOP      no rows matched
+import_operation.[tiers_libelle,description]          NOOP      no rows matched
+utilisateur.[description]                             OK        338 rows
+val_security_account.[numero_compte,groupe_1,groupe_  NOOP      no rows matched
+val_user.[description]                                NOOP      no rows matched
+cm_deal_deal.*                                        SKIPPED
+cm_fli_flow.[group1,group2,group3]                    NOOP      no rows matched
+cm_payt_payment.*                                     SKIPPED
+tp_business_profile.[description]                     OK        4 rows
+uaa_users.[description,firstname,lastname,email,phon  OK        8 rows
+--- Identifiers -----------------------------------------------
+structure.code                                        OK        1,863 rows
+structure.pere                                        OK        1,376 rows
+tiers.code                                            OK        869 rows
+tiers.entite_pere                                     OK        31 rows
+tiers.entite_fifo                                     OK        28 rows
+tiers.tiers_conso                                     OK        864 rows
+tiers.tiers_federateur                                NOOP      no rows matched
+tiers.tiers_conso2                                    NOOP      no rows matched
+tiers.tiers_conso3                                    NOOP      no rows matched
+compte_banque.code                                    OK        2,016 rows
+compte_banque.code_bban                               NOOP      no rows matched
+compte_banque.agence                                  OK        1,995 rows
+compte_banque.banque                                  OK        2,002 rows
+compte_banque.entite                                  OK        2,016 rows
+compte_banque.portefeuille_defaut                     NOOP      no rows matched
+compte_banque.compte_previs_glob                      NOOP      no rows matched
+param_marge_titre.entite                              NOOP      no rows matched
+ccp_breakdown.clearing_member                         NOOP      no rows matched
+clearing_member_breakdown.clearing_member             NOOP      no rows matched
+budget_filtre.entite                                  NOOP      no rows matched
+budget_regle.entite                                   NOOP      no rows matched
+compte_devise.entite                                  OK        29 rows
+compte_devise.compte                                  OK        29 rows
+compte_filiale.filiale                                OK        530 rows
+compte_filiale.entite                                 OK        530 rows
+compte_filiale.compte                                 OK        530 rows
+compte_regle.contrepartie                             OK        316 rows
+compte_regle.entite                                   OK        337 rows
+compte_regle.portefeuille                             OK        40 rows
+compte_regle.depositaire                              OK        6 rows
+compte_regle.compte                                   OK        337 rows
+compte_regle_bqe.correspondant                        NOOP      no rows matched
+compte_regle_bqe.contrepartie                         NOOP      no rows matched
+compte_regle_bqe.portefeuille                         NOOP      no rows matched
+compte_regle_bqe.depositaire                          NOOP      no rows matched
+compte_regle_bqe.entite                               NOOP      no rows matched
+compte_regle_bqe.compte                               NOOP      no rows matched
+compte_regle_liv.contrepartie                         NOOP      no rows matched
+compte_regle_liv.entite                               NOOP      no rows matched
+compte_regle_liv.portefeuille                         NOOP      no rows matched
+compte_regle_liv.depositaire                          NOOP      no rows matched
+compte_regle_liv.compte                               NOOP      no rows matched
+compte_titre.depositaire                              NOOP      no rows matched
+compte_titre.entite                                   NOOP      no rows matched
+contrat.emetteur                                      NOOP      no rows matched
+contrat_cadre.entite                                  NOOP      no rows matched
+contrat_cadre.federateur                              NOOP      no rows matched
+contrat_cadre.compte_echelle                          NOOP      no rows matched
+contrat_instrument.entite                             NOOP      no rows matched
+contrat_instrument.federateur                         NOOP      no rows matched
+ctpyrating.counterparty                               NOOP      no rows matched
+deposit_fils.portefeuille                             NOOP      no rows matched
+deposit_fils.portefeuille_pere                        NOOP      no rows matched
+deposit_pere.portefeuille                             NOOP      no rows matched
+deposit_pere.portefeuille_depo                        NOOP      no rows matched
+echelle.entite_mere                                   OK        631 rows
+echelle.portefeuille_mere                             OK        1 rows
+echelle.compte_reglement                              OK        631 rows
+echelle_condition.code                                OK        176 rows
+echelle_cond_date.condition                           OK        569 rows
+echelle_compte.compte                                 OK        644 rows
+echelle_marge.condition                               OK        84 rows
+fifo_solde_depo.compensateur                          NOOP      no rows matched
+fifo_solde_depo.depositaire                           NOOP      no rows matched
+fifo_solde_depo.portefeuille                          NOOP      no rows matched
+frais_gestion.portefeuille                            NOOP      no rows matched
+groupe_detail.portefeuille                            NOOP      no rows matched
+groupe_provision.entite                               NOOP      no rows matched
+decouvert_compte.compte                               OK        96 rows
+marge_compte_de.contrepartie                          NOOP      no rows matched
+marge_regle.contrepartie                              NOOP      no rows matched
+marge_regle.entite                                    NOOP      no rows matched
+param_arrete.entite                                   OK        4 rows
+param_bafi_cpt.entite                                 NOOP      no rows matched
+param_clonage.por_maitre                              NOOP      no rows matched
+param_clonage.por_clone                               NOOP      no rows matched
+param_cpta_reg_gen.portefeuille                       NOOP      no rows matched
+param_cpta_reg_gen.compte_ana                         NOOP      no rows matched
+param_cpta_reg_ven.banque                             OK        16 rows
+param_cpta_reg_ven.entite                             OK        217 rows
+param_cpta_reg_ven.portefeuille                       NOOP      no rows matched
+param_cpta_reg_ven.compte                             NOOP      no rows matched
+param_date.portefeuille                               NOOP      no rows matched
+param_date.contrepartie                               NOOP      no rows matched
+param_effet_paye.compte                               NOOP      no rows matched
+param_effet_recu.compte                               NOOP      no rows matched
+param_fiche_val_detail.code                           NOOP      no rows matched
+param_garanti_taux.assureur                           NOOP      no rows matched
+param_net_reg.compte_comp                             OK        18 rows
+param_net_reg.compte_pivot                            OK        18 rows
+param_ope_bloc.portefeuille_pere                      NOOP      no rows matched
+param_ope_bloc.portefeuille_fils                      NOOP      no rows matched
+param_parapheur_det.filiale                           NOOP      no rows matched
+param_rappro_stock.depositaire                        NOOP      no rows matched
+param_sign_user.filiale                               NOOP      no rows matched
+photo.entite                                          NOOP      no rows matched
+photo_budget.entite                                   NOOP      no rows matched
+photo_flux.entite                                     NOOP      no rows matched
+prevision_param.entite                                NOOP      no rows matched
+prevision_param.compte                                NOOP      no rows matched
+regle_rappro_auto.banque                              NOOP      no rows matched
+regle_rappro_auto.entite                              OK        73 rows
+regle_rappro_auto.compte                              OK        12 rows
+reglement_decalage.banque                             OK        51 rows
+reglement_decalage.compte                             NOOP      no rows matched
+reglement_flux.entite                                 NOOP      no rows matched
+reglement_flux.tiers                                  NOOP      no rows matched
+reglement_flux.compte                                 NOOP      no rows matched
+reglement_regle.banque                                NOOP      no rows matched
+reglement_regle.compte                                NOOP      no rows matched
+spread_breakdown.portfolio                            NOOP      no rows matched
+spread_breakdown.entity                               NOOP      no rows matched
+spread_breakdown.issuer                               NOOP      no rows matched
+stress_results.portefeuille                           NOOP      no rows matched
+tiers_compteur.tiers                                  OK        56 rows
+tiers_foyer.foyer                                     NOOP      no rows matched
+tiers_foyer.foyer_appartenance                        NOOP      no rows matched
+tiers_limite.tiers                                    NOOP      no rows matched
+tiers_limite.entite                                   NOOP      no rows matched
+titre.emetteur                                        OK        24 rows
+titre.bafi_garant                                     NOOP      no rows matched
+titre.depositaire                                     OK        5 rows
+titre.domiciliataire                                  OK        7 rows
+val_bank_account.code                                 OK        1 rows
+val_affilied_code.code_ref                            NOOP      no rows matched
+val_third_party.adresse1                              NOOP      no rows matched
+val_third_party.code                                  OK        3 rows
+val_third_party.tiers_conso                           NOOP      no rows matched
+val_table_security.code                               NOOP      no rows matched
+valo_ccy_volat_rule.portfolio                         NOOP      no rows matched
+valo_ccy_volat_rule.entity                            NOOP      no rows matched
+valo_regle.portefeuille                               NOOP      no rows matched
+valo_regle.entite                                     NOOP      no rows matched
+ventiler_contrat_cadre.entite                         NOOP      no rows matched
+ventiler_contrat_cadre.tiers                          NOOP      no rows matched
+ventiler_corresp.banque                               OK        14 rows
+ventiler_corresp.contrepartie                         NOOP      no rows matched
+ventiler_corresp.correspondant_1                      OK        14 rows
+ventiler_corresp.correspondant_2                      NOOP      no rows matched
+ventiler_corresp_bqe.tiers_entite                     CHECKBOX
+ventiler_corresp_bqe.contrepartie                     NOOP      no rows matched
+ventiler_corresp_bqe.correspondant_1                  NOOP      no rows matched
+ventiler_corresp_bqe.correspondant_2                  NOOP      no rows matched
+ventiler_corresp_bqe.banque                           NOOP      no rows matched
+ventiler_portef.contrepartie                          NOOP      no rows matched
+ventiler_portef.portefeuille                          OK        2 rows
+ventiler_reg_liv.depositaire                          NOOP      no rows matched
+ventiler_reg_liv.contrepartie                         OK        1 rows
+ventiler_reg_liv.portefeuille                         OK        4 rows
+vue_affilie_tiers.code_ref                            OK        524 rows
+vue_affilie_compte.code_ref                           OK        1,136 rows
+ventiler_compte.valeur_1                              OK        3,632 rows
+ventiler_compte.valeur_2                              OK        1,854 rows
+ventiler_compte.valeur_3                              OK        432 rows
+ventiler_compte.valeur_4                              NOOP      no rows matched
+virement_compte.compte                                NOOP      no rows matched
+histo_budget.entite                                   NOOP      no rows matched
+histo_compta.tiers                                    OK        3,725,022 rows
+histo_compta.entite                                   OK        3,725,022 rows
+histo_compta.portefeuille                             OK        410 rows
+histo_compta_solde.entite                             OK        374,887 rows
+histo_courtage.tiers                                  OK        6,332 rows
+histo_couverture.tiers_deposit                        NOOP      no rows matched
+histo_couverture.tiers_reception                      NOOP      no rows matched
+histo_deposit.depositaire                             NOOP      no rows matched
+histo_deposit.portefeuille                            NOOP      no rows matched
+histo_detenteur.ancien_detenteur                      NOOP      no rows matched
+histo_detenteur.nouveau_detenteur                     NOOP      no rows matched
+histo_effet.compte                                    NOOP      no rows matched
+histo_effet.compte_effet                              NOOP      no rows matched
+histo_evenement.entite                                OK        73,632 rows
+histo_evenement.contrepartie                          OK        37,273 rows
+histo_evenement.depositaire                           NOOP      no rows matched
+histo_evenement.entity_corresp1                       NOOP      no rows matched
+histo_evenement.entity_corresp2                       NOOP      no rows matched
+histo_facture.entite                                  NOOP      no rows matched
+histo_facture.tiers                                   NOOP      no rows matched
+histo_fifo_solde.portefeuille                         OK        16 rows
+histo_fifo_solde.compensateur                         OK        16 rows
+histo_fiscalite.entite                                NOOP      no rows matched
+histo_fiscalite.foyer                                 NOOP      no rows matched
+histo_fiscalite.compte_fiscal                         NOOP      no rows matched
+histo_flux.entite                                     OK        198,078 rows
+histo_flux.portefeuille                               OK        186,506 rows
+histo_flux.tiers                                      OK        198,078 rows
+histo_limite_tr.entite                                NOOP      no rows matched
+histo_limite_tr.tiers                                 NOOP      no rows matched
+histo_ligne.compte                                    NOOP      no rows matched
+histo_liv_solde.entite                                NOOP      no rows matched
+histo_livraison.entite                                NOOP      no rows matched
+histo_livraison.tiers                                 NOOP      no rows matched
+histo_livraison.portefeuille                          NOOP      no rows matched
+histo_matiere.entite                                  NOOP      no rows matched
+histo_matiere.tiers                                   NOOP      no rows matched
+histo_matiere.portefeuille                            NOOP      no rows matched
+histo_mouv_solde.compte                               OK        830,814 rows
+histo_mouv_titre_solde.compensateur                   NOOP      no rows matched
+histo_mouvement.entite                                OK        2,322,570 rows
+histo_mouvement.compte                                OK        2,322,570 rows
+histo_mouvement.compte_contrepartie                   NOOP      no rows matched
+histo_operation.clearing_member                       NOOP      no rows matched
+histo_operation.entite                                OK        1,455,434 rows
+histo_operation.contrepartie                          OK        1,455,302 rows
+histo_operation.compensateur                          OK        861 rows
+histo_operation.filiale                               OK        1,175,039 rows
+histo_operation.intermediaire                         NOOP      no rows matched
+histo_operation.portefeuille                          OK        51,613 rows
+histo_operation.portefeuille_tiers                    OK        51,605 rows
+histo_operation.depositaire                           OK        861 rows
+histo_operation.depositaire_2                         OK        432 rows
+histo_operation.emetteur                              OK        861 rows
+histo_operation.corresp_receiver1                     OK        4,859 rows
+histo_operation.corresp_receiver2                     OK        2,250 rows
+histo_operation.corresp_sender1                       OK        4,917 rows
+histo_operation.corresp_sender2                       OK        2,142 rows
+histo_operation.portefeuille_deposit                  NOOP      no rows matched
+histo_operation.tiers_domicile                        OK        16,900 rows
+histo_operation.compte_entite                         OK        1,448,268 rows
+histo_operation.compte_tiers                          OK        452,424 rows
+histo_operation.compte_filiale                        OK        1,174,408 rows
+histo_operation.compte_tiers_2                        OK        17,187 rows
+histo_operation.compte_entite_2                       OK        35,641 rows
+histo_operation.tiers_iban_compte                     NOOP      no rows matched
+histo_parapheur.filiale                               NOOP      no rows matched
+histo_parapheur_det.filiale                           NOOP      no rows matched
+histo_position_tr.entite                              OK        955 rows
+histo_prevision.compte                                NOOP      no rows matched
+histo_pricing_detail.entite                           NOOP      no rows matched
+histo_pricing_detail.portefeuille                     NOOP      no rows matched
+histo_pricing_detail.portefeuille_tiers               NOOP      no rows matched
+histo_reg_conso.compte                                NOOP      no rows matched
+histo_reg_releve.entite                               OK        187,359 rows
+histo_reg_releve.compte                               OK        187,359 rows
+histo_reg_solde.entite                                OK        211,263 rows
+histo_reg_solde.portefeuille                          OK        17,261 rows
+histo_reg_solde.compte                                OK        211,271 rows
+histo_reglement.entite                                OK        3,346,056 rows
+histo_reglement.tiers                                 OK        3,077,837 rows
+histo_reglement.corresp_receiver1                     OK        11,378 rows
+histo_reglement.corresp_receiver2                     OK        9,490 rows
+histo_reglement.corresp_sender1                       OK        12,064 rows
+histo_reglement.corresp_sender2                       OK        10,950 rows
+histo_reglement.portefeuille                          OK        144,484 rows
+histo_reglement.compte                                OK        3,346,056 rows
+histo_reglement.cpty_account                          OK        1,627,048 rows
+histo_titre_solde.compensateur                        OK        16 rows
+histo_titre_solde.portefeuille                        OK        16 rows
+import_evenement.contrepartie                         NOOP      no rows matched
+import_evenement.entite                               NOOP      no rows matched
+import_evenement.cpty_account                         NOOP      no rows matched
+import_evenement.entity_account                       NOOP      no rows matched
+import_evenement.cpty_corresp1                        NOOP      no rows matched
+import_evenement.cpty_corresp2                        NOOP      no rows matched
+import_evenement.entity_corresp1                      NOOP      no rows matched
+import_evenement.entity_corresp2                      NOOP      no rows matched
+import_operation.clearing_member                      NOOP      no rows matched
+import_operation.entite                               OK        486 rows
+import_operation.contrepartie                         OK        486 rows
+import_operation.compensateur                         NOOP      no rows matched
+import_operation.filiale                              NOOP      no rows matched
+import_operation.intermediaire                        NOOP      no rows matched
+import_operation.portefeuille                         OK        4,165 rows
+import_operation.portefeuille_tiers                   OK        4,134 rows
+import_operation.depositaire                          NOOP      no rows matched
+import_operation.depositaire_2                        NOOP      no rows matched
+import_operation.emetteur                             NOOP      no rows matched
+import_operation.corresp_receiver1                    NOOP      no rows matched
+import_operation.corresp_receiver2                    NOOP      no rows matched
+import_operation.corresp_sender1                      NOOP      no rows matched
+import_operation.corresp_sender2                      NOOP      no rows matched
+import_operation.portefeuille_deposit                 NOOP      no rows matched
+import_operation.tiers_domicile                       NOOP      no rows matched
+import_operation.compte_entite                        OK        3 rows
+import_operation.compte_tiers                         OK        184 rows
+import_operation.compte_filiale                       NOOP      no rows matched
+import_operation.compte_tiers_2                       NOOP      no rows matched
+import_operation.groupe_1                             NOOP      no rows matched
+import_operation.groupe_2                             NOOP      no rows matched
+import_operation.groupe_3                             NOOP      no rows matched
+zba_breakdown.centralizer_account                     OK        1 rows
+zba_payment_breakdown.entity                          NOOP      no rows matched
+zba_payment_breakdown.portfolio                       NOOP      no rows matched
+zba_payment_breakdown.mirrored_entity                 NOOP      no rows matched
+zba_payment_breakdown.mirrored_portfolio              NOOP      no rows matched
+zba_payment_breakdown.centralizer_account             NOOP      no rows matched
+zba_payment_breakdown.current_account                 NOOP      no rows matched
+zba_payment_breakdown.mirrored_current_account        NOOP      no rows matched
+zba_transfer_breakdown.entity                         OK        2 rows
+zba_transfer_breakdown.portfolio                      NOOP      no rows matched
+zba_transfer_breakdown.counterparty                   OK        2 rows
+zba_transfer_breakdown.centralizer_account            OK        2 rows
+zba_transfer_breakdown.counterparty_account           OK        2 rows
+zba_transfer_breakdown.entity_account                 OK        2 rows
+charge_contract_criteria.entity                       NOOP      no rows matched
+charge_contract_criteria.bank                         NOOP      no rows matched
+charge_contract_criteria.account                      NOOP      no rows matched
+charge_contract_process.entity                        NOOP      no rows matched
+charge_contract_process.bank                          NOOP      no rows matched
+charge_contract_process.account                       NOOP      no rows matched
+charge_missing_process.entity                         NOOP      no rows matched
+charge_missing_process.bank                           NOOP      no rows matched
+charge_missing_process.account                        NOOP      no rows matched
+mpm_file_bkd.entity                                   NOOP      no rows matched
+mpm_file_bkd.counterparty                             NOOP      no rows matched
+mpm_file_bkd.account                                  NOOP      no rows matched
+trade_repository_breakdown.entity                     NOOP      no rows matched
+val_cptyrating.counterparty                           SKIPPED
+val_currency_account.entity                           SKIPPED
+val_currency_account.compte                           NOOP      no rows matched
+val_security_account.entite                           NOOP      no rows matched
+val_security_account.depositaire                      NOOP      no rows matched
+val_security_account.correspondant                    SKIPPED
+val_security_account.contrepartie                     SKIPPED
+val_ssi_account.portefeuille                          NOOP      no rows matched
+val_ssi_account.depositaire                           NOOP      no rows matched
+val_ssi_account.compte                                NOOP      no rows matched
+val_ssi_account.tiers_entite                          CHECKBOX
+val_ssi_corresp.banque                                NOOP      no rows matched
+val_ssi_corresp.contrepartie                          NOOP      no rows matched
+val_ssi_corresp.correspondant_1                       NOOP      no rows matched
+val_ssi_corresp.correspondant_2                       NOOP      no rows matched
+val_ssi_corresp.tiers_entite                          CHECKBOX
+val_third_party_limit.entite                          NOOP      no rows matched
+val_third_party_limit.tiers                           NOOP      no rows matched
+cm_account_of_bkstmt_file.entity                      OK        3 rows
+cm_account_of_bkstmt_file.account                     OK        3 rows
+cm_account_of_bkstmt_file.bank                        OK        3 rows
+cm_archived_forecast.entity                           NOOP      no rows matched
+cm_archived_forecast.bank                             NOOP      no rows matched
+cm_bkstmt_file_config.collator                        OK        3 rows
+cm_bkstmt_file_config.bank                            NOOP      no rows matched
+cm_bsi_bank_statement.entity                          OK        6 rows
+cm_bsi_bank_statement.bank_account                    OK        6 rows
+cm_cash_concent_accounts.entity                       OK        8 rows
+cm_cash_concent_accounts.account                      OK        8 rows
+cm_cash_concent_accounts.bank                         OK        8 rows
+cm_cash_concent_header.master_account                 OK        6 rows
+cm_cash_concent_header.compte_tiers                   SKIPPED
+cm_cash_concent_header.compte_entite                  SKIPPED
+cm_cash_concent_header.compte_filiale                 SKIPPED
+cm_cash_concent_header.entity                         OK        6 rows
+cm_cash_concent_header.filiale                        SKIPPED
+cm_cash_concent_header.intermediaire                  SKIPPED
+cm_cash_concent_header.portefeuille                   SKIPPED
+cm_cash_concent_header.contrepartie                   SKIPPED
+cm_cash_concent_header.correspondant_1                SKIPPED
+cm_cash_concent_header.correspondant_2                SKIPPED
+cm_cash_concent_header.correspondant_3                SKIPPED
+cm_cash_concent_header.correspondant_4                SKIPPED
+cm_cash_concent_header.correspondant_5                SKIPPED
+cm_cash_concent_header.portefeuille_tiers             SKIPPED
+cm_cash_concent_header.depositaire                    SKIPPED
+cm_cash_concent_header.depositaire_2                  SKIPPED
+cm_cash_concent_header.emetteur                       SKIPPED
+cm_cash_concent_header.correspondant_sender1          SKIPPED
+cm_cash_concent_header.correspondant_sender2          SKIPPED
+cm_cash_concent_header.correspondant_receiver1        SKIPPED
+cm_cash_concent_header.correspondant_receiver2        SKIPPED
+cm_deal_deal.compte_tiers                             SKIPPED
+cm_deal_deal.compte_entite                            SKIPPED
+cm_deal_deal.compte_filiale                           SKIPPED
+cm_deal_deal.compte_tiers_2                           SKIPPED
+cm_deal_deal.entity                                   SKIPPED
+cm_deal_deal.filiale                                  SKIPPED
+cm_deal_deal.intermediaire                            SKIPPED
+cm_deal_deal.portefeuille                             SKIPPED
+cm_deal_deal.portefeuille_deposit                     SKIPPED
+cm_deal_deal.contrepartie                             SKIPPED
+cm_deal_deal.correspondant_1                          SKIPPED
+cm_deal_deal.correspondant_2                          SKIPPED
+cm_deal_deal.correspondant_3                          SKIPPED
+cm_deal_deal.correspondant_4                          SKIPPED
+cm_deal_deal.correspondant_5                          SKIPPED
+cm_deal_deal.correspondant_6                          SKIPPED
+cm_deal_deal.correspondant_7                          SKIPPED
+cm_deal_deal.correspondant_8                          SKIPPED
+cm_deal_deal.correspondant_9                          SKIPPED
+cm_deal_deal.correspondant_10                         SKIPPED
+cm_deal_deal.portefeuille_tiers                       SKIPPED
+cm_deal_deal.depositaire                              SKIPPED
+cm_deal_deal.depositaire_2                            SKIPPED
+cm_deal_deal.emetteur                                 SKIPPED
+cm_deal_deal.correspondant_sender1                    SKIPPED
+cm_deal_deal.correspondant_sender2                    SKIPPED
+cm_deal_deal.correspondant_receiver1                  SKIPPED
+cm_deal_deal.correspondant_receiver2                  SKIPPED
+cm_deal_deal.compensateur                             SKIPPED
+cm_deal_deal.depositaire_bis                          SKIPPED
+cm_deal_deal.depositaire_2_bis                        SKIPPED
+cm_deal_deal.corresp_inter_sender1                    SKIPPED
+cm_deal_deal.corresp_inter_sender2                    SKIPPED
+cm_deal_deal.corresp_inter_receiver1                  SKIPPED
+cm_deal_deal.corresp_inter_receiver2                  SKIPPED
+cm_deal_deal.clearing_member                          SKIPPED
+cm_fli_flow.entity                                    NOOP      no rows matched
+cm_fli_flow.portfolio                                 NOOP      no rows matched
+cm_fli_flow.account                                   SKIPPED
+cm_fli_flow.counterparty                              NOOP      no rows matched
+cm_flow_to_pay_rules.entity                           NOOP      no rows matched
+cm_flow_to_pay_rules.bank                             SKIPPED
+cm_foi_forecast.entity                                NOOP      no rows matched
+cm_foi_forecast.bank                                  NOOP      no rows matched
+cm_forecast.entity                                    NOOP      no rows matched
+cm_forecast.portfolio                                 SKIPPED
+cm_forecast.bank                                      NOOP      no rows matched
+cm_forecast.branch                                    SKIPPED
+cm_forecast.subsidiary_cpty                           SKIPPED
+cm_forecast.corresp_receiver1                         SKIPPED
+cm_forecast.corresp_receiver2                         SKIPPED
+cm_forecast.corresp_sender1                           SKIPPED
+cm_forecast.corresp_sender2                           SKIPPED
+cm_payt_payment.portfolio                             SKIPPED
+cm_payt_payment.cpty_account_code                     SKIPPED
+cm_payt_payment.corresp_receiver1                     SKIPPED
+cm_payt_payment.corresp_receiver2                     SKIPPED
+cm_payt_payment.corresp_sender1                       SKIPPED
+cm_payt_payment.corresp_sender2                       SKIPPED
+cm_pooling_convention.entity                          SKIPPED
+cm_pooling_convention.counterparty                    SKIPPED
+cm_process.entity                                     NOOP      no rows matched
+cms_file_bkd.entity                                   NOOP      no rows matched
+cms_file_bkd.counterparty                             NOOP      no rows matched
+cm_cms_exceptions.entity                              SKIPPED
+cm_cms_exceptions.portfolio                           SKIPPED
+cm_cms_exceptions.counterparty                        SKIPPED
+cm_cms_exceptions.issuer                              SKIPPED
+dm_hedge_request.entity                               OK        32 rows
+dm_hedge_request.portfolio                            OK        32 rows
+dm_hedge_request.counterparty                         OK        30 rows
+dm_hr_autovalid_bkd.entity                            NOOP      no rows matched
+dm_hr_ctrp_map.counterparty                           NOOP      no rows matched
+dm_hr_cutoff_bkd.entity                               NOOP      no rows matched
+dm_hr_cutoff_bkd.portfolio                            SKIPPED
+dm_hr_cutoff_bkd.counterparty                         NOOP      no rows matched
+dm_hr_limit_bkd.entity                                OK        1 rows
+dm_hr_limit_bkd.portfolio                             SKIPPED
+dm_hr_ptf_bkd.issuer                                  SKIPPED
+dm_hr_ptf_bkd.cts_counterparty                        SKIPPED
+dm_hr_quotation.entity                                SKIPPED
+dm_hr_quotation.account                               SKIPPED
+dm_hr_quotation.bank                                  SKIPPED
+tp_comm_entity_dim.entity                             NOOP      no rows matched
+tp_comm_entity_dim.account                            NOOP      no rows matched
+tp_comm_entity_dim.bank                               SKIPPED
+tp_contact.entity                                     SKIPPED
+tp_contact.bank_account                               SKIPPED
+tp_data_profile_bankaccount.counterparty              SKIPPED
+tp_data_profile_ctrp.entity                           SKIPPED
+tp_data_profile_entity.portfolio                      SKIPPED
+tp_data_profile_ptf.account                           SKIPPED
+tp_data_profile_ptf.bank                              SKIPPED
+tp_pos_snapshot.entity                                OK        2 rows
+tp_pos_snapshot.account                               NOOP      no rows matched
+tp_pos_snapshot_results.entity                        OK        886 rows
+tp_pos_snapshot_results.account                       OK        886 rows
+tp_tenant_entity.entity                               OK        173 rows
+tp_users.entity                                       SKIPPED
+tp_users.counterparty                                 SKIPPED
+tp_wv_mailing_rule.entity                             NOOP      no rows matched
+tp_wv_mailing_rule.counterparty                       NOOP      no rows matched
+tp_wv_transition_rule.entity                          OK        2 rows
+tp_wv_transition_rule.counterparty                    SKIPPED
+--- Labels and entity attributes ------------------------------
+structure.[description]                               OK        1,863 rows
+tiers.[description]                                   OK        869 rows
+compte_banque.[description]                           OK        2,016 rows
+tiers.[adresse1,adresse2,adresse3,adresse4,adresse5]  OK        569 rows
+tiers.[telephone,fax,email_adress,nom_pp,prenom_pp]   OK        4 rows
+tiers.[groupe_1,groupe_2,groupe_3,dpt_naissance]      OK        1 rows
+tiers.[sector,seniority,telex,type_interne]           NOOP      no rows matched
+compte_banque.[groupe_1,groupe_2,groupe_3]            OK        141 rows
+triggers enabled: 45
+==============================================================
+Run 2 summary (EXECUTE)
+==============================================================
+applied ........... 156
+no rows matched ... 236
+skipped ........... 304   (not present on this instance)
+disabled .......... 0   (excluded by configuration)
+errors ............ 0
+rows affected ..... 44,460,155
+step time ......... 1,757s
+==============================================================
+236 item(s) matched no rows. That is expected for a
+column that was already clean, but on a column you expected to
+change it means the name is wrong or the mapping is empty:
+SELECT object_name FROM anon_meta.anon_step_log
+WHERE run_id = 2 AND status = 'NOOP';
+
+====================================================================
+Complete
+====================================================================
+
+Next: verify the result.
+sqlplus op/<password>@<TNS> @verify\verify_op_coverage.sql
+
+Disconnected from Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.24.0.0.0
+
+====================================================================
+ COMPLETE
+
+ Verify:
+   sqlplus op/<password>@TANM7881 @verify\verify_op_coverage.sql
+ Full output: logs\
+====================================================================
+PS C:\Users\u735031\Desktop\TEST\Anonymization_v4\op>

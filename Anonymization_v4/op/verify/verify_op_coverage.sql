@@ -237,18 +237,23 @@ BEGIN
             CONTINUE;
          END IF;
 
-         -- Restrict exactly as the engine did, so the check mirrors the change.
-         -- Including the length filter matters: without it, identifiers the run
-         -- deliberately skipped as too short would be reported as leaks and a
-         -- correct run could never pass.
-         IF r.category = 'BANK_ACCOUNT' THEN
-            v_src := '(SELECT old_code FROM anon_meta.code_map '
-                  || ' WHERE category = ''BANK_ACCOUNT'''
-                  || '   AND LENGTH(old_code) >= ' || v_min_len || ')';
-         ELSE
-            v_src := '(SELECT old_code FROM anon_meta.code_map_any'
-                  || ' WHERE LENGTH(old_code) >= ' || v_min_len || ')';
-         END IF;
+         -- Search the FULL mapping, whatever category the column is declared as.
+         --
+         -- This deliberately does NOT mirror the engine. An earlier version
+         -- restricted BANK_ACCOUNT columns to bank-account codes, exactly as the
+         -- engine does - which meant a column whose category was too narrow was
+         -- missed by the engine AND by the check that was supposed to catch it.
+         -- Both agreed, both wrong. On TANM7881 that hid five live client codes
+         -- in param_cpta_reg_gen.compte_ana.
+         --
+         -- The verifier's job is to test the OUTCOME - is any original value
+         -- still present - not to re-apply the engine's assumptions. Any
+         -- original left anywhere is a leak, whatever category it belongs to.
+         --
+         -- The length filter stays: those identifiers are skipped deliberately
+         -- and are reported separately in PART 4.
+         v_src := '(SELECT old_code FROM anon_meta.code_map_any'
+               || ' WHERE LENGTH(old_code) >= ' || v_min_len || ')';
 
          EXECUTE IMMEDIATE
             'SELECT COUNT(*), COUNT(CASE WHEN t.' || r.column_name
@@ -257,6 +262,18 @@ BEGIN
 
          IF v_bad = 0 THEN
             record('RESIDUAL', v_obj, 'no original values remain', v_total, 0, c_pass);
+
+         ELSIF r.category = 'BANK_ACCOUNT' THEN
+            -- The engine only substitutes bank-account codes here, so anything
+            -- left belongs to another category and the declared category is too
+            -- narrow for what the column actually holds.
+            record('RESIDUAL', v_obj, 'no original values remain', v_total, v_bad, c_fail,
+                   'original identifiers remain. Declared BANK_ACCOUNT, so only account codes '
+                || 'were substituted - these values belong to another category. Change the '
+                || 'category to ANY in the inventory and re-run.');
+            show_failure(v_obj, v_bad, v_total,
+                         'originals remain - BANK_ACCOUNT category is too narrow');
+
          ELSE
             record('RESIDUAL', v_obj, 'no original values remain', v_total, v_bad, c_fail,
                    'original identifiers still present - this column was not anonymized');

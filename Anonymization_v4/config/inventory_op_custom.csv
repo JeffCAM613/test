@@ -8,6 +8,10 @@
 # Keep additions here rather than in inventory_op.csv: this file survives an
 # upgrade of the shipped inventory.
 #
+# A row here also OVERRIDES the shipped inventory for the same table and column.
+# This file is parsed second, so its rule and category win - which is how a
+# wrong classification in inventory_op.csv gets corrected without editing it.
+#
 # ----------------------------------------------------------------------------
 # FORMAT: table_name,column_name,rule,category,source,notes
 #
@@ -155,3 +159,26 @@ compte_banque,groupe_3,SELF_CODE,BANK_ACCOUNT,CUSTOM,was Cpte3
 # ----------------------------------------------------------------------------
 # ADD YOUR ROWS BELOW THIS LINE
 # ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# CATEGORY CORRECTION - param_cpta_reg_gen.compte_ana
+# ----------------------------------------------------------------------------
+# Found on TANM7881, 2026-08-13, after a full run verified clean.
+#
+# inventory_op.csv declares this column CODE / BANK_ACCOUNT, inherited from v3's
+#   merge_codes('param_cpta_reg_gen','compte_ana', p_entity_type => 'COMPTE')
+#
+# so the engine only ever substituted bank-account codes into it. Five rows were
+# left holding original identifiers of another category - live client data.
+#
+# "compte_ana" is compte analytique: an analytical / cost-centre account, not a
+# bank account. v3 classified it from the word "compte" in the name.
+#
+# A row here overrides the shipped inventory - same table and column, loaded
+# second, so this category wins.
+#
+# Widening to ANY searches the whole mapping, which still resolves genuine bank
+# account references correctly: code_map_any contains every category, and only
+# the six cross-category collisions resolve differently.
+# ----------------------------------------------------------------------------
+param_cpta_reg_gen,compte_ana,CODE,ANY,CUSTOM,was BANK_ACCOUNT - left 5 originals on TANM7881
